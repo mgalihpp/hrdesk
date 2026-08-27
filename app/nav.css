@@ -11,3 +11,30 @@
 .navbar-wrapper {
   transition: transform 0.3s ease;
 }
+
+/* Interaction polyfills (driven by WebflowWidgets.tsx). These only toggle the
+   same classes Webflow's own CSS keys off; no new visual language is introduced. */
+
+/* Pricing Monthly/Yearly switch — moves the circle to the "yearly" side. */
+.tab-switch {
+  cursor: pointer;
+}
+
+.switch-circle {
+  transition: transform 0.3s ease;
+}
+
+.tab-switch.is-yearly .switch-circle {
+  transform: translateX(26px);
+}
+
+/* FAQ accordion — collapse answers unless their question is current. */
+.faq-para-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.faq-block.w--current .faq-para-wrapper {
+  max-height: 600px;
+}
