@@ -48,10 +48,9 @@ A PR is verified only when lint, typecheck, unit, and the live HTTP check all pa
 
 - Next.js 16 (App Router) monolith. React 19 + React Compiler (already on).
 - **Better Auth** for identity, sessions, and multi-tenant organizations/RBAC.
-  `mongodbAdapter` for its data; `nextCookies()` for cookie handling in App Router.
+  `prismaAdapter` for its data; `nextCookies()` for cookie handling in App Router.
 - tRPC for the application API. No GraphQL.
-- Prisma + MongoDB for domain models. Native `MongoClient` shared with Better Auth
-  and used for multi-document pay-run transactions.
+- Prisma + MongoDB for domain models and Better Auth (single Prisma client, no native `MongoClient`).
 - NATS JetStream for async side-effects (payslip gen, notifications, sync).
 - Bun 1.4.0, Biome, Vitest, TypeScript.
 

@@ -1,6 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/mongo";
 import { prisma } from "@/lib/prisma";
 import type { Role, TenantId, TRPCContext } from "@/lib/types";
 
@@ -15,17 +14,17 @@ export const createTRPCContext = async ({
   headers: Headers;
 }): Promise<TRPCContext> => {
   const s = await auth.api.getSession({ headers });
-  if (!s?.session) return { session: null, mongo: db, prisma };
+  if (!s?.session) return { session: null, prisma };
   const tenantId = s.session.activeOrganizationId;
-  if (!tenantId) return { session: null, mongo: db, prisma };
+  if (!tenantId) return { session: null, prisma };
   let role: string | undefined;
   try {
     const res = await auth.api.getActiveMemberRole({ headers });
     role = res.role;
   } catch {
-    return { session: null, mongo: db, prisma };
+    return { session: null, prisma };
   }
-  if (!role) return { session: null, mongo: db, prisma };
+  if (!role) return { session: null, prisma };
   const roles: Role[] = [role as Role];
   return {
     session: {
@@ -33,14 +32,13 @@ export const createTRPCContext = async ({
       tenantId: tenantId as TenantId,
       roles,
     },
-    mongo: db,
     prisma,
   };
 };
 
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.session) throw new TRPCError({ code: "UNAUTHORIZED" });
-  return next({ ctx: { session: ctx.session } });
+  return next({ ctx: { session: ctx.session, prisma: ctx.prisma } });
 });
 
 export const protectedProcedure = t.procedure.use(isAuthed);

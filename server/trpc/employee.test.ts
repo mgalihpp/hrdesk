@@ -1,5 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import type { Db } from "mongodb";
 import { describe, expect, it } from "vitest";
 import type { SessionUser, TenantId } from "@/lib/types";
 import { appRouter } from "./routers/_app";
@@ -28,16 +27,6 @@ function fakePrisma(): PrismaClient {
   } as unknown as PrismaClient;
 }
 
-const fakeMongo = {
-  collection: () => ({
-    find: () => ({ toArray: async () => [] }),
-    findOne: async () => null,
-    insertOne: async () => ({ insertedId: "x" }),
-    updateOne: async () => ({ modifiedCount: 0 }),
-    deleteOne: async () => ({ deletedCount: 0 }),
-  }),
-} as unknown as Db;
-
 const sample = {
   firstName: "J",
   lastName: "D",
@@ -54,7 +43,6 @@ describe("employee RBAC", () => {
     const caller = appRouter.createCaller({
       session: session(["employee"]),
       prisma: fakePrisma(),
-      mongo: fakeMongo,
     });
     await expect(caller.employee.create(sample)).rejects.toThrow(/FORBIDDEN/);
   });
@@ -63,7 +51,6 @@ describe("employee RBAC", () => {
     const caller = appRouter.createCaller({
       session: session(["hr"]),
       prisma: fakePrisma(),
-      mongo: fakeMongo,
     });
     const res = await caller.employee.create(sample);
     expect(res.id).toBeDefined();
@@ -73,7 +60,6 @@ describe("employee RBAC", () => {
     const caller = appRouter.createCaller({
       session: null,
       prisma: fakePrisma(),
-      mongo: fakeMongo,
     });
     await expect(caller.employee.list()).rejects.toThrow(/UNAUTHORIZED/);
   });

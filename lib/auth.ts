@@ -1,8 +1,8 @@
 import { betterAuth } from "better-auth";
-import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { createAccessControl, organization } from "better-auth/plugins";
-import { db } from "@/lib/mongo";
+import { prisma } from "@/lib/prisma";
 
 // Statements are the verbs our RBAC vocabulary allows. Every role is a subset.
 const ac = createAccessControl({
@@ -43,7 +43,7 @@ const payrollAdmin = ac.newRole({
 });
 
 export const auth = betterAuth({
-  database: mongodbAdapter(db),
+  database: prismaAdapter(prisma, { provider: "mongodb" }),
   emailAndPassword: { enabled: true },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,

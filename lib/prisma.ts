@@ -1,7 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 
-// Single Prisma instance for domain models (Tenant, Employee). Better Auth and
-// pay-run transactions use the native driver from lib/mongo.ts.
+// Single Prisma instance for the whole app: domain models (Tenant, Employee)
+// and Better Auth. It replaces the native MongoDB driver that lib/mongo.ts used
+// to provide.
 const globalForPrisma = globalThis as unknown as { _prisma?: PrismaClient };
 
 export const prisma: PrismaClient =
