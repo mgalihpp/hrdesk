@@ -48,7 +48,10 @@ export default function Pricing() {
                       <div className="per-month-pricing-wrapper blue">
                         <div className="body-small">$0/ month</div>
                       </div>
-                      <a href="#" className="secondary-button equal-padding w-button">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
                         Signup Now
                       </a>
                     </div>
@@ -169,7 +172,10 @@ export default function Pricing() {
                       <div className="per-month-pricing-wrapper green">
                         <div className="body-small">$39/ month</div>
                       </div>
-                      <a href="#" className="secondary-button equal-padding w-button">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
                         Signup Now
                       </a>
                     </div>
@@ -290,7 +296,10 @@ export default function Pricing() {
                       <div className="per-month-pricing-wrapper orange">
                         <div className="body-small">$59/ month</div>
                       </div>
-                      <a href="#" className="secondary-button equal-padding w-button">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
                         Signup Now
                       </a>
                     </div>
@@ -411,7 +420,10 @@ export default function Pricing() {
                       <div className="per-month-pricing-wrapper pink">
                         <div className="body-small">$99/ month</div>
                       </div>
-                      <a href="#" className="secondary-button equal-padding w-button">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
                         Signup Now
                       </a>
                     </div>
@@ -528,10 +540,7 @@ export default function Pricing() {
                   </div>
                 </div>
               </div>
-              <div
-                data-w-tab="Yearly"
-                className="pricing-tab-panel w-tab-pane"
-              >
+              <div data-w-tab="Yearly" className="pricing-tab-panel w-tab-pane">
                 <div className="pricing-columns-wrapper">
                   <div className="pricing-column">
                     <div className="pricing-row">
@@ -539,7 +548,10 @@ export default function Pricing() {
                       <div className="per-month-pricing-wrapper blue">
                         <div className="body-small">$0/ month</div>
                       </div>
-                      <a href="#" className="secondary-button equal-padding w-button">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
                         Signup Now
                       </a>
                     </div>
@@ -661,7 +673,10 @@ export default function Pricing() {
                       <div className="per-month-pricing-wrapper green">
                         <div className="body-small">$27/ mo</div>
                       </div>
-                      <a href="#" className="secondary-button equal-padding w-button">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
                         Signup Now
                       </a>
                     </div>
@@ -783,7 +798,10 @@ export default function Pricing() {
                       <div className="per-month-pricing-wrapper orange">
                         <div className="body-small">$41/ mo</div>
                       </div>
-                      <a href="#" className="secondary-button equal-padding w-button">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
                         Signup Now
                       </a>
                     </div>
@@ -905,7 +923,10 @@ export default function Pricing() {
                       <div className="per-month-pricing-wrapper pink">
                         <div className="body-small">$69/ mo</div>
                       </div>
-                      <a href="#" className="secondary-button equal-padding w-button">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
                         Signup Now
                       </a>
                     </div>

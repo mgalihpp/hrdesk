@@ -1,9 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+const NAV_SECTIONS = [
+  "Home",
+  "Benefits",
+  "Feature",
+  "Use-Cases",
+  "Integrations",
+  "Pricing",
+] as const;
+type SectionId = (typeof NAV_SECTIONS)[number];
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [active, setActive] = useState<SectionId>("Home");
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,6 +26,29 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    const sections: { id: SectionId; el: Element }[] = [];
+    for (const id of NAV_SECTIONS) {
+      const el = document.getElementById(id)?.closest("section");
+      if (el) sections.push({ id, el });
+    }
+    if (sections.length === 0) return;
+    const idByEl = new Map(sections.map((s) => [s.el, s.id]));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = idByEl.get(entry.target);
+          if (id) setActive(id);
+        }
+      },
+      { rootMargin: "-80px 0px -65% 0px", threshold: 0 },
+    );
+    sections.forEach((s) => {
+      observer.observe(s.el);
+    });
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -113,22 +146,40 @@ export default function Navbar() {
                 <img src="/saasdesk-logo.svg" alt="Saasdesk" className="logo" />
               </a>
               <div className="nav-links">
-                <a href="#Home" className="nav-link w-nav-link">
+                <a
+                  href="#Home"
+                  className={`nav-link w-nav-link${active === "Home" ? " w--current" : ""}`}
+                >
                   Home
                 </a>
-                <a href="#Benefits" className="nav-link w-nav-link">
+                <a
+                  href="#Benefits"
+                  className={`nav-link w-nav-link${active === "Benefits" ? " w--current" : ""}`}
+                >
                   Benefits
                 </a>
-                <a href="#Feature" className="nav-link w-nav-link">
+                <a
+                  href="#Feature"
+                  className={`nav-link w-nav-link${active === "Feature" ? " w--current" : ""}`}
+                >
                   Features
                 </a>
-                <a href="#Use-Cases" className="nav-link w-nav-link">
+                <a
+                  href="#Use-Cases"
+                  className={`nav-link w-nav-link${active === "Use-Cases" ? " w--current" : ""}`}
+                >
                   Use Cases
                 </a>
-                <a href="#Integrations" className="nav-link w-nav-link">
+                <a
+                  href="#Integrations"
+                  className={`nav-link w-nav-link${active === "Integrations" ? " w--current" : ""}`}
+                >
                   Integrations
                 </a>
-                <a href="#Pricing" className="nav-link w-nav-link">
+                <a
+                  href="#Pricing"
+                  className={`nav-link w-nav-link${active === "Pricing" ? " w--current" : ""}`}
+                >
                   Pricing
                 </a>
               </div>
@@ -140,7 +191,10 @@ export default function Navbar() {
                   Login
                 </a>
                 <div className="nav-btn">
-                  <a href="#Home" className="secondary-button equal-padding w-button">
+                  <a
+                    href="#Home"
+                    className="secondary-button equal-padding w-button"
+                  >
                     Signup
                   </a>
                 </div>
