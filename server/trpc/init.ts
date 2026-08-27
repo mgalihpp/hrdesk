@@ -1,6 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { auth } from "@/lib/auth";
-import type { Role, SessionUser, TenantId, TRPCContext } from "@/lib/types";
+import { db } from "@/lib/mongo";
+import { prisma } from "@/lib/prisma";
+import type { Role, TenantId, TRPCContext } from "@/lib/types";
 
 const t = initTRPC.context<TRPCContext>().create();
 
@@ -13,24 +15,26 @@ export const createTRPCContext = async ({
   headers: Headers;
 }): Promise<TRPCContext> => {
   const s = await auth.api.getSession({ headers });
-  if (!s?.session) return { session: null };
+  if (!s?.session) return { session: null, mongo: db, prisma };
   const tenantId = s.session.activeOrganizationId;
-  if (!tenantId) return { session: null };
+  if (!tenantId) return { session: null, mongo: db, prisma };
   let role: string | undefined;
   try {
     const res = await auth.api.getActiveMemberRole({ headers });
     role = res.role;
   } catch {
-    return { session: null };
+    return { session: null, mongo: db, prisma };
   }
-  if (!role) return { session: null };
+  if (!role) return { session: null, mongo: db, prisma };
   const roles: Role[] = [role as Role];
   return {
     session: {
       id: s.user.id,
       tenantId: tenantId as TenantId,
       roles,
-    } satisfies SessionUser,
+    },
+    mongo: db,
+    prisma,
   };
 };
 
@@ -44,6 +48,14 @@ export const protectedProcedure = t.procedure.use(isAuthed);
 export const rbacProcedure = (role: Role) =>
   protectedProcedure.use(({ ctx, next }) => {
     if (!ctx.session.roles.includes(role)) {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+    return next({ ctx });
+  });
+
+export const rbacAnyProcedure = (roles: Role[]) =>
+  protectedProcedure.use(({ ctx, next }) => {
+    if (!ctx.session.roles.some((r) => roles.includes(r))) {
       throw new TRPCError({ code: "FORBIDDEN" });
     }
     return next({ ctx });

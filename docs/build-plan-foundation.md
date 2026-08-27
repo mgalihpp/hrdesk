@@ -240,11 +240,11 @@ This is the one place that bypasses Prisma's type safety, so it has its own test
 
 **PR-3. Organization + Employee.** (after PR-2)
 - Files: `prisma/schema.prisma` (provider mongodb) with `Tenant` + `Employee` models, `Employee` (PII encrypted fields, comp as `Cents`),
-  `Tenant` settings doc, routers `org`, `employee` using `tenantCollection`.
+  `Tenant` settings doc, routers `org`, `employee` using the Prisma client (`ctx.prisma`); the native Mongo driver stays only for Better Auth and future pay-run transactions.
 - Build: CRUD scoped by `ctx.session.tenantId`; RBAC on write (hr/admin);
   PII encrypt at write, decrypt at read (server only).
 - Verify, unit: an employee created under tenant A is invisible to tenant B through
-  `tenantCollection` (the load-bearing tenancy test).
+  the Prisma `tenantId` filter (the load-bearing tenancy test).
 - Verify, live: create an employee via `employee.create`, then `employee.list` as a
   different tenant returns empty.
 - Review gate: none.
