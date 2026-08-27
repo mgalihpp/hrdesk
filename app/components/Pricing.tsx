@@ -659,7 +659,7 @@ export default function Pricing() {
                     <div className="pricing-row">
                       <div className="h4">Starter</div>
                       <div className="per-month-pricing-wrapper green">
-                        <div className="body-small">$39/ month</div>
+                        <div className="body-small">$27/ mo</div>
                       </div>
                       <a href="#" className="secondary-button equal-padding w-button">
                         Signup Now
@@ -781,7 +781,7 @@ export default function Pricing() {
                     <div className="pricing-row">
                       <div className="h4">Professional</div>
                       <div className="per-month-pricing-wrapper orange">
-                        <div className="body-small">$59/ month</div>
+                        <div className="body-small">$41/ mo</div>
                       </div>
                       <a href="#" className="secondary-button equal-padding w-button">
                         Signup Now
@@ -903,7 +903,7 @@ export default function Pricing() {
                     <div className="pricing-row">
                       <div className="h4">Business</div>
                       <div className="per-month-pricing-wrapper pink">
-                        <div className="body-small">$99/ month</div>
+                        <div className="body-small">$69/ mo</div>
                       </div>
                       <a href="#" className="secondary-button equal-padding w-button">
                         Signup Now

@@ -79,23 +79,63 @@ function activateSliders(root: ParentNode, signal: AbortSignal) {
   });
 }
 
-/** Wires the pricing Monthly/Yearly switch to the pricing tabs. */
+/** Adds a cursor-tracking 3D tilt to the use-case cards, matching the
+ *  hover interaction on the reference site. The row supplies the
+ *  `perspective` and the block keeps `transform-style: preserve-3d`, so the
+ *  image (which carries `translateZ` on hover) lifts out of the card. */
+function activateCardTilt(root: ParentNode, signal: AbortSignal) {
+  const MAX = 9;
+  root.querySelectorAll<HTMLElement>(".use-case-block").forEach((card) => {
+    const onMove = (e: MouseEvent) => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `rotateX(${-py * MAX * 2}deg) rotateY(${px * MAX * 2}deg)`;
+    };
+    const reset = () => {
+      card.style.transform = "";
+    };
+    card.addEventListener("mousemove", onMove, { signal });
+    card.addEventListener("mouseleave", reset, { signal });
+  });
+}
+
+/** Wires the pricing Monthly/Yearly switch. Toggles the panes and the
+ *  `is-yearly` class directly (rather than delegating to a synthetic link
+ *  click) so it cannot be broken by another widget failing to initialise. */
 function activatePricingToggle(root: ParentNode, signal: AbortSignal) {
   root.querySelectorAll<HTMLElement>(".tab-switch").forEach((sw) => {
     sw.style.cursor = "pointer";
     const tabs = sw.parentElement?.querySelector<HTMLElement>(".pricing-tabs");
-    const links = tabs
-      ? Array.from(tabs.querySelectorAll<HTMLElement>(".w-tab-link"))
-      : [];
-    if (links.length < 2) return;
-    const setPeriod = (yearly: boolean) => {
-      (links[yearly ? 1 : 0] as HTMLElement | undefined)?.click();
+    if (!tabs) return;
+    const links = Array.from(tabs.querySelectorAll<HTMLElement>(".w-tab-link"));
+    const panes = Array.from(tabs.querySelectorAll<HTMLElement>(".w-tab-pane"));
+    if (links.length < 2 || panes.length < 2) return;
+
+    const apply = (yearly: boolean) => {
+      const active = yearly ? links[1] : links[0];
+      const key = active.getAttribute("data-w-tab");
+      links.forEach((l, i) => l.classList.toggle("w--current", i === (yearly ? 1 : 0)));
+      panes.forEach((p) =>
+        p.classList.toggle("w--tab-active", p.getAttribute("data-w-tab") === key),
+      );
       sw.classList.toggle("is-yearly", yearly);
     };
+
     sw.addEventListener(
       "click",
-      () => setPeriod(!sw.classList.contains("is-yearly")),
+      () => apply(!sw.classList.contains("is-yearly")),
       { signal },
+    );
+    links.forEach((l) =>
+      l.addEventListener(
+        "click",
+        (e) => {
+          e.preventDefault();
+          apply(l === links[1]);
+        },
+        { signal },
+      ),
     );
   });
 }
@@ -104,9 +144,19 @@ export default function WebflowWidgets() {
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
-    activateTabs(document, signal);
-    activateSliders(document, signal);
-    activatePricingToggle(document, signal);
+    const inits = [
+      activateTabs,
+      activateSliders,
+      activatePricingToggle,
+      activateCardTilt,
+    ];
+    for (const init of inits) {
+      try {
+        init(document, signal);
+      } catch (err) {
+        console.error("WebflowWidgets init failed:", err);
+      }
+    }
     return () => controller.abort();
   }, []);
   return null;

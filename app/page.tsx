@@ -2,7 +2,6 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Benefits from "./components/Benefits";
 import Feature from "./components/Feature";
-import Payouts from "./components/Payouts";
 import UseCases from "./components/UseCases";
 import Testimonial from "./components/Testimonial";
 import Integration from "./components/Integration";
@@ -22,7 +21,6 @@ export default function Home() {
       <Hero />
       <Benefits />
       <Feature />
-      <Payouts />
       <UseCases />
       <Testimonial />
       <Integration />

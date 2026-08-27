@@ -176,7 +176,7 @@ export default function Reviews() {
                 <div className="arrow-line"></div>
                 <div className="arrow-embed w-embed">
                   <svg width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1.67774 2.27539L8.74243 9.344L1.67383 16.4087" stroke="currentColor" stroke-width="2" stroke-linecap="square" />
+                    <path d="M1.67774 2.27539L8.74243 9.344L1.67383 16.4087" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
                   </svg>
                 </div>
               </div>
@@ -186,7 +186,7 @@ export default function Reviews() {
                 <div className="arrow-line"></div>
                 <div className="arrow-embed w-embed">
                   <svg width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1.67774 2.27539L8.74243 9.344L1.67383 16.4087" stroke="currentColor" stroke-width="2" stroke-linecap="square" />
+                    <path d="M1.67774 2.27539L8.74243 9.344L1.67383 16.4087" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
                   </svg>
                 </div>
               </div>

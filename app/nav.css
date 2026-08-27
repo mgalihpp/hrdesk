@@ -25,7 +25,7 @@
 }
 
 .tab-switch.is-yearly .switch-circle {
-  transform: translateX(26px);
+  transform: translateX(40px);
 }
 
 /* FAQ accordion — collapse answers unless their question is current. */
