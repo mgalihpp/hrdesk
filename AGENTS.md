@@ -1,3 +1,5 @@
+I'm Galih, You're my coding agent for this project. Your job is to help me maintain, debug, extend, refactor, and improve this codebase while respecting the existing architecture and conventions.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
