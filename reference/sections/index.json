@@ -1,0 +1,62 @@
+[
+  {
+    "order": 0,
+    "name": "home-hero-section",
+    "preview": "<section id=\"Home\" class=\"home-hero-section\"><div class=\"w-layout-blockcontainer main-container w-container\"><div class=\"home-hero-container"
+  },
+  {
+    "order": 1,
+    "name": "benefits-section",
+    "preview": "<section class=\"benefits-section\"><div id=\"Benefits\" class=\"anchor-div\"></div><div class=\"w-layout-blockcontainer main-container w-container"
+  },
+  {
+    "order": 2,
+    "name": "feature-section",
+    "preview": "<section data-w-id=\"ac979be1-8054-1f64-8065-d802f446a1b8\" class=\"feature-section\"><div id=\"Feature\" class=\"anchor-div\"></div><div class=\"w-l"
+  },
+  {
+    "order": 3,
+    "name": "use-case-section",
+    "preview": "<section class=\"use-case-section\"><div id=\"Use-Cases\" class=\"anchor-div\"></div><div class=\"w-layout-blockcontainer main-container w-containe"
+  },
+  {
+    "order": 4,
+    "name": "testimonial-section",
+    "preview": "<section class=\"testimonial-section\"><div class=\"w-layout-blockcontainer main-container w-container\"><div class=\"testimonial-container\"><div"
+  },
+  {
+    "order": 5,
+    "name": "integration-section",
+    "preview": "<section data-w-id=\"f1e68f88-45e3-dbdb-41e9-82be60effc6d\" class=\"integration-section\"><div id=\"Integrations\" class=\"anchor-div\"></div><div c"
+  },
+  {
+    "order": 6,
+    "name": "reviews-section",
+    "preview": "<section class=\"reviews-section\"><div class=\"w-layout-blockcontainer main-container w-container\"><div class=\"reviews-container\"><div class=\""
+  },
+  {
+    "order": 7,
+    "name": "pricing-section",
+    "preview": "<section class=\"pricing-section\"><div id=\"Pricing\" class=\"anchor-div\"></div><div class=\"pricing-container\"><h3 class=\"section-title-h2\">Plan"
+  },
+  {
+    "order": 8,
+    "name": "faq-section",
+    "preview": "<section class=\"faq-section\"><div id=\"FAQs\" class=\"anchor-div\"></div><div class=\"w-layout-blockcontainer main-container w-container\"><div cl"
+  },
+  {
+    "order": 9,
+    "name": "client-section",
+    "preview": "<section class=\"client-section\"><div class=\"w-layout-blockcontainer main-container w-container\"><div class=\"client-container\"><h5 class=\"h2 "
+  },
+  {
+    "order": 10,
+    "name": "for-team-section",
+    "preview": "<section class=\"for-team-section\"><div class=\"w-layout-blockcontainer main-container w-container\"><div class=\"for-team-container\"><div class"
+  },
+  {
+    "order": 11,
+    "name": "footer-section",
+    "preview": "<section class=\"footer-section\"><div class=\"w-layout-blockcontainer main-container w-container\"><div class=\"footer-container\"><div class=\"fo"
+  }
+]

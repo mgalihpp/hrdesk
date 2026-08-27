@@ -258,3 +258,56 @@
     @apply font-sans;
   }
 }
+/* Scroll-reveal — Webflow IX2 scroll-entrance, approximated.
+   Hidden state gated on `.ix-ready` (set by ScrollReveal on mount) so
+   content stays visible if JS is disabled. */
+.ix-ready [data-w-id].ix-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+  will-change: opacity, transform;
+}
+
+.ix-ready [data-w-id].ix-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ix-ready [data-w-id].ix-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Feature section — scroll-driven background + sticky visual cross-fade.
+   The three features each map to a brand background (orange / yellow / pink,
+   §14.2) that the section swaps to as it scrolls, and to one of the three
+   stacked `.interactive-element-*` layers in the sticky visual panel.
+   Specificity here ties `.ix-ready [data-w-id].ix-reveal` so the
+   background-color transition survives alongside the entrance fade. */
+.ix-ready .feature-section.ix-reveal,
+.ix-ready .feature-section.ix-visible {
+  transition:
+    background-color 0.5s ease,
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+.feature-block-images-wrapper .interactive-element-1,
+.feature-block-images-wrapper .interactive-element-2,
+.feature-block-images-wrapper .interactive-element-3 {
+  transition: opacity 0.5s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ix-ready .feature-section.ix-reveal,
+  .feature-block-images-wrapper .interactive-element-1,
+  .feature-block-images-wrapper .interactive-element-2,
+  .feature-block-images-wrapper .interactive-element-3 {
+    transition: none;
+  }
+}
