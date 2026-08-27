@@ -1,0 +1,13 @@
+/* Webflow's collapse CSS hides `.w-nav-menu` and shows `.w-nav-button` at
+   <=991 via `data-collapse="medium"`, but the open state is normally driven by
+   Webflow.js. This reveals the menu when our client toggle adds `.w--open`. */
+@media screen and (max-width: 991px) {
+  .w-nav[data-collapse="medium"] .w-nav-menu.w--open {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.navbar-wrapper {
+  transition: transform 0.3s ease;
+}

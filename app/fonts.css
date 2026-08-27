@@ -1,0 +1,11 @@
+/* Brand font for the cloned Webflow markup. The project loads GeneralSans via
+   next/font/local under a hashed family name, so the Webflow CSS rule
+   `font-family: Generalsans Variable` would fall back to sans-serif.
+   This @font-face registers that exact family name against the local TTF. */
+@font-face {
+  font-family: "Generalsans Variable";
+  src: url("/fonts/GeneralSans-Variable.ttf") format("truetype");
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
