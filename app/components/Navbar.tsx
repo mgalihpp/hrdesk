@@ -17,6 +17,28 @@ export default function Navbar() {
   const [active, setActive] = useState<SectionId>("Home");
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  const scrollToSection = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    id: SectionId,
+  ) => {
+    e.preventDefault();
+    const anchor = document.getElementById(id);
+    const target = (anchor?.closest("section") as HTMLElement | null) ?? anchor;
+    if (target) {
+      const prefersReduced = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      const behavior: ScrollBehavior = prefersReduced ? "auto" : "smooth";
+      const NAV_OFFSET = 88;
+      const top =
+        target.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+      window.scrollTo({ top, behavior });
+      history.pushState(null, "", `#${id}`);
+    }
+    setActive(id);
+    setOpen(false);
+  };
+
   useEffect(() => {
     const onScroll = () => {
       const el = wrapperRef.current;
@@ -149,36 +171,42 @@ export default function Navbar() {
               <div className="nav-links">
                 <a
                   href="#Home"
+                  onClick={(e) => scrollToSection(e, "Home")}
                   className={`nav-link w-nav-link${active === "Home" ? " w--current" : ""}`}
                 >
                   Home
                 </a>
                 <a
                   href="#Benefits"
+                  onClick={(e) => scrollToSection(e, "Benefits")}
                   className={`nav-link w-nav-link${active === "Benefits" ? " w--current" : ""}`}
                 >
                   Benefits
                 </a>
                 <a
                   href="#Feature"
+                  onClick={(e) => scrollToSection(e, "Feature")}
                   className={`nav-link w-nav-link${active === "Feature" ? " w--current" : ""}`}
                 >
                   Features
                 </a>
                 <a
                   href="#Use-Cases"
+                  onClick={(e) => scrollToSection(e, "Use-Cases")}
                   className={`nav-link w-nav-link${active === "Use-Cases" ? " w--current" : ""}`}
                 >
                   Use Cases
                 </a>
                 <a
                   href="#Integrations"
+                  onClick={(e) => scrollToSection(e, "Integrations")}
                   className={`nav-link w-nav-link${active === "Integrations" ? " w--current" : ""}`}
                 >
                   Integrations
                 </a>
                 <a
                   href="#Pricing"
+                  onClick={(e) => scrollToSection(e, "Pricing")}
                   className={`nav-link w-nav-link${active === "Pricing" ? " w--current" : ""}`}
                 >
                   Pricing

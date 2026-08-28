@@ -256,6 +256,13 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+    scroll-padding-top: 88px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 /* Scroll-reveal — Webflow IX2 scroll-entrance, approximated.
@@ -282,13 +289,21 @@
     transition: none;
   }
 }
-
 /* Feature section — scroll-driven background + sticky visual cross-fade.
    The three features each map to a brand background (orange / yellow / pink,
    §14.2) that the section swaps to as it scrolls, and to one of the three
    stacked `.interactive-element-*` layers in the sticky visual panel.
    Specificity here ties `.ix-ready [data-w-id].ix-reveal` so the
    background-color transition survives alongside the entrance fade. */
+/* Reviews slider — gap between card and dot nav (was bottom:0 with no padding) */
+.review-slider {
+  padding-bottom: 64px;
+}
+.review-slider .w-slider-nav {
+  height: auto;
+  padding-top: 24px;
+  padding-bottom: 4px;
+}
 .ix-ready .feature-section.ix-reveal,
 .ix-ready .feature-section.ix-visible {
   transition:
