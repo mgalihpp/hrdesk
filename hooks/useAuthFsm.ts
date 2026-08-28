@@ -70,7 +70,7 @@ function reducer(state: FsmState, action: Action): FsmState {
   }
 }
 
-export function useAuthFsm(mode: AuthMode) {
+export function useAuthFsm(_mode: AuthMode) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, dispatch] = useReducer(reducer, {
