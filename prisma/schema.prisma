@@ -232,3 +232,37 @@ model Leave {
   @@index([tenantId, employeeId])
   @@map("leave")
 }
+
+model Job {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId    String
+  title       String
+  department  String?
+  description String?
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("job")
+}
+
+model Candidate {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId        String
+  jobId           String   @db.ObjectId
+  firstName       String
+  lastName        String
+  emailEnc        String
+  phoneEnc        String?
+  stage           String   @default("applied")
+  hiredEmployeeId String?  @db.ObjectId
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, jobId])
+  @@index([tenantId, stage])
+  @@map("candidate")
+}
