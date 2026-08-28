@@ -9,6 +9,40 @@
     "ignoreUnknown": true,
     "includes": ["**", "!node_modules", "!.next", "!dist", "!build"]
   },
+  "overrides": [
+    {
+      "includes": ["components/ui/**"],
+      "linter": { "enabled": false },
+      "formatter": { "enabled": false },
+      "assist": { "enabled": false }
+    },
+    {
+      "includes": ["app/components/**", "app/webflow.css", "app/nav.css"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noSvgWithoutTitle": "off",
+            "useValidAnchor": "off",
+            "noRedundantRoles": "off",
+            "useGenericFontNames": "off",
+            "noRedundantAlt": "off",
+            "useSemanticElements": "off"
+          },
+          "correctness": {
+            "noUnknownProperty": "off"
+          },
+          "security": {
+            "noBlankTarget": "off",
+            "noDangerouslySetInnerHtml": "off"
+          },
+          "suspicious": {
+            "noArrayIndexKey": "off",
+            "useIterableCallbackReturn": "off"
+          }
+        }
+      }
+    }
+  ],
   "formatter": {
     "enabled": true,
     "indentStyle": "space",

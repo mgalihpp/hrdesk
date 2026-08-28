@@ -14,71 +14,62 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Project Overview
 
-SaaSdesk (branded "Saasland HR") is a single-page marketing landing page for a Payroll & HR SaaS, built with Next.js 16 (App Router) and React 19. It is a static, content-heavy page ported from a Webflow template. There is one route, `/`, composed of 15 section components. This is a landing site, not an application with a backend or data layer.
+SaaSdesk (branded "Saasland HR") — Next.js 16 (App Router) + React 19 monolith. Serves a static marketing landing page **and** an authenticated app (dashboard, tRPC API) backed by MongoDB via Prisma + Better Auth. Single repo, not a multi-package monorepo.
 
-## Architecture & Data Flow
+## Architecture
 
-- `app/layout.tsx` (RootLayout) loads the GeneralSans local font, sets metadata, and imports the global stylesheets (`globals.css`, `fonts.css`, `webflow.css`, `nav.css`).
-- `app/page.tsx` (Home) composes 15 section components in a fixed order and passes **no props**. The section sequence is the page; do not reorder or inject props without reason.
-- All 15 components in `app/components/` are presentational sections. Five are `'use client'` (Navbar, Benefits, Feature, ScrollReveal, WebflowWidgets) for scroll/IntersectionObserver effects and Webflow-JS polyfills; the rest are server components.
-- There is **no data fetching, no async/await, no global state, no React context, and no error boundaries** in `app/`. Content is hardcoded literals and inline `const` arrays (e.g. `TABS`, `FEATURE_BG`, `ROW1_LOGOS`). Keep it that way unless a feature genuinely needs state.
-- Webflow interactions (tabs, sliders, pricing toggle, card tilt, FAQ accordion, scroll reveal) are NOT React state. They are restored by a client polyfill engine in `app/components/WebflowWidgets.tsx` that queries the DOM after mount and wires behavior to the existing Webflow class names (`w-tabs`, `w-slider`, etc.). `ScrollReveal.tsx` adds `.ix-ready` and fades `[data-w-id]` nodes on intersect.
+- **Routes (route groups):** `app/layout.tsx` (root: GeneralSans `next/font/local`, `globals.css`, `fonts.css`) → `app/(marketing)/layout.tsx` (imports `webflow.css`, `nav.css`) → `app/(marketing)/page.tsx` (Home: 15 presentational sections in fixed order, no props); `app/(auth)/` (login/signup); `app/dashboard/` (protected shell); `app/api/auth/[...all]/route.ts` (Better Auth handler); `app/api/trpc/[trpc]/route.ts` (tRPC `fetchRequestHandler`, `createTRPCContext` from `server/trpc/init.ts`).
+- **Marketing sections:** `app/components/` — mostly server components; `Navbar`, `Benefits`, `Feature`, `ScrollReveal`, `WebflowWidgets` are `'use client'`. Content is hardcoded `const` arrays; do not add data fetching unless required.
+- **Webflow polyfill:** `app/components/WebflowWidgets.tsx` is the only place for Webflow interactions (tabs, sliders, pricing toggle, card tilt, FAQ). One `activate*` fn per widget, `AbortController` cleanup, `try/catch` → `console.error`. `ScrollReveal.tsx` handles `[data-w-id]` fade-in. Keep `w-*`/`ix-*`/`u-*` class names verbatim; `app/webflow.css` (~110 KB) is verbatim export — treat as generated.
+- **Auth / tenancy / API:** `lib/auth.ts` (`betterAuth` + `prismaAdapter` MongoDB, `emailAndPassword`, `organization` plugin, `nextCookies()` last, `generateId: false` for ObjectId). `server/trpc/init.ts` builds `TRPCContext` from `auth.api.getSession` + `getActiveMemberRole` — `tenantId = activeOrganizationId`, `roles` from org member. `proxy.ts` (`matcher: /dashboard/:path*, /app/:path*`) redirects to `/login?next=` if no `better-auth.session_token` cookie, `sanitizeNext` guards open-redirect. `lib/shell-session.ts` (`cache`, `server-only`) returns `authenticated | noSession | noOrg` for dashboard shell.
 
-## Key Directories
+## Data & Security Invariants
 
-- `app/` — App Router site: `layout.tsx`, `page.tsx`, `components/`, and CSS.
-- `app/components/` — 15 section components (one file per section).
-- `lib/utils.ts` — the only shared util: `cn()` = `twMerge(clsx(inputs))`. There is no `types/` or data module.
-- `docs/` — `design.md` (content/design spec, section copy, CDN assets) and `system-design.md` (product/system architecture, data model, tenancy, security, phased build).
+- **Prisma (MongoDB):** `prisma/schema.prisma` — `User/Session/Account/Verification/Organization/Member/Invitation` (Better Auth), plus `Tenant` (keyed by org id: `plan/taxLocale/brandingName`) and `Employee` (`tenantId`, `ssnEnc`/`bankEnc` ciphertext, `compensation Int` minor units). `lib/prisma.ts` is a singleton via `globalThis`.
+- **Money — integer only:** `lib/money.ts` `Cents` branded `number`, `cents()` throws on non-integer, `moneyAdd/Sub/Gte`. Never use `float`/`Decimal128` in the money path; Mongo stores `Int`.
+- **PII encryption:** `lib/crypto.ts` AES-256-GCM, server-only. `APP_ENCRYPTION_KEY` is `64-hex` → raw key, else `sha256` hash (empty → zero key in tests). `server/repo/employee.ts` `employeeRepo(prisma, tenantId)` is the PII + tenancy boundary: encrypt on write, `decrypt` on read, every query filters by `tenantId` from session. Never take `tenantId` from request body/URL. Reuse this pattern for new tenant-scoped repos.
+- **RBAC:** `lib/auth.ts` `createAccessControl` with 6 roles (`owner`, `admin`, `hr`, `manager`, `employee`, `payrollAdmin`) — see `server/trpc/init.ts` `protectedProcedure`/`rbacProcedure`/`rbacAnyProcedure`. `lib/types.ts` has branded `TenantId`/`EmployeeId`/`Cents`.
+- **Payroll atomicity (future):** Prisma has no Mongo transactions; pay-run persistence must use native driver session (`mongo.client.startSession().withTransaction`) — requires Mongo replica set, not standalone.
 
-## Development Commands
+## Commands
 
-Package manager is **Bun 1.4.0** (pinned via `packageManager`). Use `bun run`, not `npm`/`yarn`/`pnpm`.
+Package manager is **Bun 1.4.0** (pinned `packageManager`). Use `bun run`, not npm/yarn/pnpm.
 
 ```bash
-bun install        # install deps (honors trustedDependencies/ignoreScripts for sharp, unrs-resolver)
-bun run dev        # next dev
-bun run build      # next build
-bun run start      # next start (production)
-bun run lint       # biome check
-bun run format     # biome format --write
+bun install                          # honors trustedDependencies/ignoreScripts (sharp, unrs-resolver, prisma)
+bun run dev                          # next dev
+bun run build                        # next build
+bun run lint                         # biome check
+bun run format                       # biome format --write
+bun run typecheck                    # tsc --noEmit
+bun run test                         # vitest run (node env, APP_ENCRYPTION_KEY=0…0 stub)
+bun run test -- lib/money.test.ts   # single file
+bun run db:generate                  # prisma generate (after schema.prisma edits)
+bun run db:push                      # prisma db push (needs DATABASE_URL)
+bun run db:seed                      # bun prisma/seed.ts
+bun run db:studio                    # prisma studio
 ```
 
-There is **no test script**.
+**CI order** (`.github/workflows/ci.yml` on `push`/`pull_request`): `bun install --frozen-lockfile` → `bun run lint` → `bun run typecheck` → `bun run test`. Run in this order locally before pushing.
 
-## Code Conventions & Common Patterns
+## Code Conventions
 
-- **Lint & format:** Biome 2.4.2 (`biome.json`), 2-space indent, `organizeImports` on. No ESLint/Prettier. Always run `bun run lint` and `bun run format` before committing.
-- **Styling:** Tailwind v4 CSS-first (tokens in `app/globals.css` via `@theme`; no `tailwind.config.js`). Plus a verbatim Webflow export at `app/webflow.css` (~110 KB) and interaction polyfills in `app/nav.css`. No CSS modules. Use `cn()` for conditional classes; reach for shadcn (radix-luma) primitives and `lucide-react` icons for any new interactive UI.
-- **Webflow porting rule:** keep Webflow class names verbatim (`w-*`, `ix-*`, `u-*`). When adding or repairing a section interaction, extend `WebflowWidgets.tsx` (one `activate*` fn with `AbortController` cleanup and `try/catch` → `console.error`), not React state.
-- **Components:** PascalCase file names, default-exported section components. Server components by default; add `'use client'` only for interactions/observers. No prop drilling — `page.tsx` passes nothing.
-- **Naming:** section components are named after the section (Hero, Benefits, Feature, UseCases, Testimonial, Integration, Reviews, Pricing, Faq, ClientLogos, FinalCta, Footer, Navbar, ScrollReveal, WebflowWidgets). Inline data arrays use UPPER_SNAKE_CASE.
-- **Error handling:** only in the `WebflowWidgets` polyfills (`try/catch` per init). Do not add error boundaries or async throws to the static page.
-- **React 19 + React Compiler** are enabled (`next.config.ts` `reactCompiler: true`). Write idiomatic hooks; the compiler handles memoization.
-- **TypeScript:** strict mode, `@/*` path alias → repo root (e.g. `import { cn } from "@/lib/utils"`). Avoid `any` without cause.
+- **Lint/format:** Biome 2.4.2 (`biome.json`): 2-space indent, `organizeImports` on, `tailwindDirectives` on, `next`+`react` domains. No ESLint/Prettier. Always run `bun run lint` + `bun run format`.
+- **Styling:** Tailwind v4 CSS-first (`@theme` in `app/globals.css`, no `tailwind.config.js`, `postcss.config.mjs` = `@tailwindcss/postcss`). Use `cn()` from `lib/utils.ts` (`twMerge(clsx)`). New interactive UI → `radix-luma` shadcn primitives + `lucide-react` (see `components.json`).
+- **Components:** PascalCase, default export, server by default, `'use client'` only for observers/interactions. No prop drilling in marketing `page.tsx`.
+- **TypeScript:** `strict`, `@/*` → repo root (e.g. `import { cn } from "@/lib/utils"`). Avoid `any`. React Compiler is on (`next.config.ts` `reactCompiler: true`) — don't add manual `useMemo`/`memo` unless profiled.
+- **Validation:** `lib/validators/auth.ts` + `lib/auth-errors.ts` (`mapAuthError`, `sanitizeNext`) for auth forms. Add zod schemas for new tRPC inputs.
+
+## Env & Setup
+
+Copy `.env.example` → `.env`: `DATABASE_URL` (MongoDB), `APP_ENCRYPTION_KEY` (64-hex recommended), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_BETTER_AUTH_URL`. Vitest sets `APP_ENCRYPTION_KEY=0…0` automatically; real dev needs a real key or `decrypt` will fail.
 
 ## Important Files
 
-- `app/page.tsx` — Home composition; section order is load-bearing.
-- `app/layout.tsx` — root layout, fonts, metadata, CSS imports.
-- `app/components/WebflowWidgets.tsx` — client polyfill engine for all Webflow interactions.
-- `app/globals.css` — Tailwind v4 `@theme` tokens + shadcn semantic tokens.
-- `app/webflow.css` — verbatim Webflow stylesheet; treat as generated.
-- `lib/utils.ts` — `cn()` helper (the only shared util).
-- `next.config.ts` — `reactCompiler: true`.
-- `biome.json` — lint/format rules.
-- `docs/system-design.md`, `docs/design.md` — architecture and content specs.
-
-## Runtime/Tooling Preferences
-
-- **Bun 1.4.0** is the required runtime/package manager. Do not switch to npm/yarn/pnpm. No `.nvmrc`/engines; Bun is assumed.
-- **Biome** over ESLint/Prettier for lint + format.
-- **Tailwind v4 CSS-first** (config lives in CSS, not JS).
-- **shadcn** (radix-luma style) + **lucide-react** for icons/primitives.
-- **React Compiler** is on — avoid manual `useMemo`/`React.memo` unless profiling proves the need.
-- No Dockerfile, no `.env.example`, no CI pipeline configured.
-
-## Testing & QA
-
-- **There are no tests and no CI.** No test runner, no `*.test.*`/`*.spec.*` files, no `__tests__`, no `.github/workflows`. Biome (`bun run lint`) is the only automated quality gate.
-- If you add tests later, the idiomatic stack is **Vitest + `@testing-library/react`** for component/unit tests (optionally **Playwright** for e2e), plus a `test` script and a GitHub Actions workflow. Keep the existing Biome gate.
+- `app/layout.tsx`, `app/(marketing)/page.tsx`, `app/(marketing)/layout.tsx` — composition & CSS imports
+- `app/components/WebflowWidgets.tsx`, `app/components/ScrollReveal.tsx` — Webflow polyfills
+- `lib/auth.ts`, `lib/auth-client.ts`, `lib/shell-session.ts`, `proxy.ts` — auth/session/guard
+- `lib/money.ts`, `lib/crypto.ts`, `lib/types.ts`, `lib/utils.ts` — domain primitives
+- `server/trpc/init.ts`, `server/trpc/routers/_app.ts`, `server/repo/employee.ts` — tRPC context & tenancy pattern
+- `prisma/schema.prisma`, `vitest.config.mts`, `biome.json`, `next.config.ts`, `components.json`
+- `docs/system-design.md`, `docs/build-plan-foundation.md`, `docs/design.md` — architecture, build plan, content spec

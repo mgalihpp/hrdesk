@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useReducer } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useReducer } from "react";
 import { authClient } from "@/lib/auth-client";
 import { mapAuthError, sanitizeNext } from "@/lib/auth-errors";
 import { deriveOrgSlug } from "@/lib/slug";
 import {
+  type FieldErrors,
   loginSchema,
   signupSchema,
   toFieldErrors,
-  type FieldErrors,
 } from "@/lib/validators/auth";
 
 export type AuthMode = "signup" | "login";

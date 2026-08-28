@@ -17,7 +17,11 @@ export const metadata: Metadata = {
   description: "All-in-one Payroll & HR SaaS for small and medium teams.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"

@@ -3,6 +3,11 @@ on: [push, pull_request]
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "mongodb://localhost:27017/saasdesk_test"
+      APP_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      BETTER_AUTH_SECRET: "test-secret-for-ci-only-32-chars-long"
+      BETTER_AUTH_URL: "http://localhost:3000"
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -12,3 +17,4 @@ jobs:
       - run: bun run lint
       - run: bun run typecheck
       - run: bun run test
+      - run: bun run build

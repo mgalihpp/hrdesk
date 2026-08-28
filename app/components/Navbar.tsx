@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
 const NAV_SECTIONS = [
   "Home",
   "Benefits",
