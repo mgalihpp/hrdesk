@@ -17,8 +17,13 @@ function fakePrismaWithStore(store: Record<string, unknown>[]) {
       },
       findMany: async ({ where }: { where: { tenantId: string } }) =>
         store.filter((r) => r.tenantId === where.tenantId),
-      findFirst: async ({ where }: { where: { id: string; tenantId: string } }) =>
-        store.find((r) => r.id === where.id && r.tenantId === where.tenantId) ?? null,
+      findFirst: async ({
+        where,
+      }: {
+        where: { id: string; tenantId: string };
+      }) =>
+        store.find((r) => r.id === where.id && r.tenantId === where.tenantId) ??
+        null,
       updateMany: async () => ({ count: 0 }),
       deleteMany: async () => ({ count: 0 }),
     },

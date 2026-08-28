@@ -1,6 +1,9 @@
 export default function Integration() {
   return (
-    <section data-w-id="f1e68f88-45e3-dbdb-41e9-82be60effc6d" className="integration-section">
+    <section
+      data-w-id="f1e68f88-45e3-dbdb-41e9-82be60effc6d"
+      className="integration-section"
+    >
       <div id="Integrations" className="anchor-div" />
       <div className="w-layout-blockcontainer main-container w-container">
         <div className="integration-container">
@@ -34,17 +37,36 @@ export default function Integration() {
           <div className="integration-text-wrapper">
             <div className="integration-heading-wrapper">
               <div className="upper-heading">INTEGRATION</div>
-              <h3 className="h2">Scale your team up-and-down<br /></h3>
+              <h3 className="h2">
+                Scale your team up-and-down
+                <br />
+              </h3>
             </div>
             <p className="body-large">
-              Solutions for <span className="heading-font-color">startups and SMBs</span>, helping them establish efficient <span className="heading-font-color">HR operations</span>, manage the growing teams.
+              Solutions for{" "}
+              <span className="heading-font-color">startups and SMBs</span>,
+              helping them establish efficient{" "}
+              <span className="heading-font-color">HR operations</span>, manage
+              the growing teams.
             </p>
-            <a href="/signup" className="secondary-button without-hover-effect w-inline-block">
+            <a
+              href="/signup"
+              className="secondary-button without-hover-effect w-inline-block"
+            >
               <div className="button-arrow-wrapper white">
                 <div className="button-arrow-bg dark-bg" />
                 <div className="button-arrow-embed w-embed">
-                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10.2298 4.29312L1.62319 12.8997L0.208984 11.4855L8.81557 2.87891H1.2298V0.878906H12.2298V11.8789H10.2298V4.29312Z" fill="currentColor" />
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 13 13"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M10.2298 4.29312L1.62319 12.8997L0.208984 11.4855L8.81557 2.87891H1.2298V0.878906H12.2298V11.8789H10.2298V4.29312Z"
+                      fill="currentColor"
+                    />
                   </svg>
                 </div>
               </div>

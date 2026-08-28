@@ -49,8 +49,8 @@ export default function Benefits() {
           <div className="benefits-heading-wrapper">
             <div className="upper-heading">TOP BENEFITS</div>
             <h2 className="section-title-h2">
-              Saasland HR is a cutting-edge, cloud-based Human Resources Management
-              Software designed to streamline.
+              Saasland HR is a cutting-edge, cloud-based Human Resources
+              Management Software designed to streamline.
             </h2>
           </div>
           <div
@@ -102,10 +102,15 @@ export default function Benefits() {
                       <div className="_20px-spacing"></div>
                       <p className="body-small">
                         Saasland HR provides cost-effective HR solutions for{" "}
-                        <span className="heading-font-color">startups and SMBs</span>,
-                        helping them establish efficient
-                        <span className="heading-font-color"> HR operations</span>,
-                        manage growing teams.
+                        <span className="heading-font-color">
+                          startups and SMBs
+                        </span>
+                        , helping them establish efficient
+                        <span className="heading-font-color">
+                          {" "}
+                          HR operations
+                        </span>
+                        , manage growing teams.
                       </p>
                     </div>
                   </a>

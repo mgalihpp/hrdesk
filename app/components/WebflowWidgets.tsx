@@ -9,15 +9,22 @@ import { useEffect } from "react";
  *  "only one open" behaviour falls out of a single active pane). */
 function activateTabs(root: ParentNode, signal: AbortSignal) {
   root.querySelectorAll<HTMLElement>(".w-tabs").forEach((group) => {
-    const links = Array.from(group.querySelectorAll<HTMLElement>(".w-tab-link"));
-    const panes = Array.from(group.querySelectorAll<HTMLElement>(".w-tab-pane"));
+    const links = Array.from(
+      group.querySelectorAll<HTMLElement>(".w-tab-link"),
+    );
+    const panes = Array.from(
+      group.querySelectorAll<HTMLElement>(".w-tab-pane"),
+    );
     if (links.length === 0) return;
 
     const select = (link: HTMLElement) => {
       const key = link.getAttribute("data-w-tab");
       links.forEach((l) => l.classList.toggle("w--current", l === link));
       panes.forEach((p) =>
-        p.classList.toggle("w--tab-active", p.getAttribute("data-w-tab") === key),
+        p.classList.toggle(
+          "w--tab-active",
+          p.getAttribute("data-w-tab") === key,
+        ),
       );
     };
 
@@ -32,7 +39,8 @@ function activateTabs(root: ParentNode, signal: AbortSignal) {
       ),
     );
 
-    if (!panes.some((p) => p.classList.contains("w--tab-active"))) select(links[0]);
+    if (!panes.some((p) => p.classList.contains("w--tab-active")))
+      select(links[0]);
   });
 }
 
@@ -115,9 +123,14 @@ function activatePricingToggle(root: ParentNode, signal: AbortSignal) {
     const apply = (yearly: boolean) => {
       const active = yearly ? links[1] : links[0];
       const key = active.getAttribute("data-w-tab");
-      links.forEach((l, i) => l.classList.toggle("w--current", i === (yearly ? 1 : 0)));
+      links.forEach((l, i) =>
+        l.classList.toggle("w--current", i === (yearly ? 1 : 0)),
+      );
       panes.forEach((p) =>
-        p.classList.toggle("w--tab-active", p.getAttribute("data-w-tab") === key),
+        p.classList.toggle(
+          "w--tab-active",
+          p.getAttribute("data-w-tab") === key,
+        ),
       );
       sw.classList.toggle("is-yearly", yearly);
     };

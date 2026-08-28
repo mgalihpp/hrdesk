@@ -102,14 +102,18 @@ export default function Feature() {
                 <div className="tag white-font-color">
                   <div className="upper-heading">PAYOUTS</div>
                 </div>
-                <h3 className="h2">Automate payroll processing, tax calculations</h3>
+                <h3 className="h2">
+                  Automate payroll processing, tax calculations
+                </h3>
                 <div className="feature-block-para">
                   <p className="body-large">
                     Saasland HR provides cost-effective HR solutions for{" "}
-                    <span className="heading-font-color">startups and SMBs</span>,
-                    helping them establish efficient{" "}
-                    <span className="heading-font-color">HR operations</span>, manage
-                    growing teams.
+                    <span className="heading-font-color">
+                      startups and SMBs
+                    </span>
+                    , helping them establish efficient{" "}
+                    <span className="heading-font-color">HR operations</span>,
+                    manage growing teams.
                   </p>
                 </div>
               </div>
@@ -129,13 +133,20 @@ export default function Feature() {
                 <div className="tag white-font-color">
                   <div className="upper-heading">Recruitment</div>
                 </div>
-                <h3 className="h2">Interviews and assessments within platform</h3>
+                <h3 className="h2">
+                  Interviews and assessments within platform
+                </h3>
                 <div className="feature-block-para">
                   <p className="body-large">
                     Recruitment firms can utilize Saasland HR to{" "}
-                    <span className="heading-font-color">streamline candidate</span>{" "}
+                    <span className="heading-font-color">
+                      streamline candidate
+                    </span>{" "}
                     management, track placements, and
-                    <span className="heading-font-color"> enhance communication</span>{" "}
+                    <span className="heading-font-color">
+                      {" "}
+                      enhance communication
+                    </span>{" "}
                     between clients, candidates.
                   </p>
                 </div>
@@ -160,9 +171,13 @@ export default function Feature() {
                 <div className="feature-block-para">
                   <p className="body-large">
                     Non-profits can use Saasland HR to effectively
-                    <span className="heading-font-color"> manage volunteer</span>{" "}
-                    programs, track donor contributions, and maintain compliance with{" "}
-                    <span className="heading-font-color">non-profit</span> regulations.
+                    <span className="heading-font-color">
+                      {" "}
+                      manage volunteer
+                    </span>{" "}
+                    programs, track donor contributions, and maintain compliance
+                    with <span className="heading-font-color">non-profit</span>{" "}
+                    regulations.
                   </p>
                 </div>
               </div>
