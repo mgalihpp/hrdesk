@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 
 const NAV_SECTIONS = [
   "Home",
@@ -13,6 +14,8 @@ const NAV_SECTIONS = [
 type SectionId = (typeof NAV_SECTIONS)[number];
 
 export default function Navbar() {
+  const { data: session } = authClient.useSession();
+  const isAuthenticated = !!session?.user;
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<SectionId>("Home");
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -213,20 +216,33 @@ export default function Navbar() {
                 </a>
               </div>
               <div className="nav-buttons">
-                <a
-                  href="/login"
-                  className="nav-link change-font-color w-nav-link"
-                >
-                  Login
-                </a>
-                <div className="nav-btn">
-                  <a
-                    href="/signup"
-                    className="secondary-button equal-padding w-button"
-                  >
-                    Signup
-                  </a>
-                </div>
+                {isAuthenticated ? (
+                  <div className="nav-btn">
+                    <a
+                      href="/dashboard"
+                      className="secondary-button equal-padding w-button"
+                    >
+                      Dashboard
+                    </a>
+                  </div>
+                ) : (
+                  <>
+                    <a
+                      href="/login"
+                      className="nav-link change-font-color w-nav-link"
+                    >
+                      Login
+                    </a>
+                    <div className="nav-btn">
+                      <a
+                        href="/signup"
+                        className="secondary-button equal-padding w-button"
+                      >
+                        Signup
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </nav>
