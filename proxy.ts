@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { sanitizeNext } from "@/lib/auth-errors";
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const hasSession =
     req.cookies.has("better-auth.session_token") ||
     req.cookies.has("__Secure-better-auth.session_token");
