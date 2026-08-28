@@ -4,7 +4,9 @@ export default function Reviews() {
       <div className="w-layout-blockcontainer main-container w-container">
         <div className="reviews-container">
           <div className="reviews-heading">
-            <h3 className="section-title-h2 white-font-color">What Client Say</h3>
+            <h3 className="section-title-h2 white-font-color">
+              What Client Say
+            </h3>
           </div>
           <div
             data-delay="4000"
@@ -36,10 +38,13 @@ export default function Reviews() {
                       <div className="h6">Faster Hiring</div>
                     </div>
                     <div className="body-medium">
-                      “They have a great understanding of HR strategies and how to apply them effectively”
+                      “They have a great understanding of HR strategies and how
+                      to apply them effectively”
                     </div>
                     <div className="client-info-wrapper">
-                      <div className="body-small heading-font-color">Adam Smith</div>
+                      <div className="body-small heading-font-color">
+                        Adam Smith
+                      </div>
                       <div>Co-Founder & CEO</div>
                     </div>
                   </div>
@@ -61,10 +66,13 @@ export default function Reviews() {
                       <div className="h6">Relevant Profiles</div>
                     </div>
                     <div className="body-medium">
-                      “They have a great understanding of HR strategies and how to apply them effectively”
+                      “They have a great understanding of HR strategies and how
+                      to apply them effectively”
                     </div>
                     <div className="client-info-wrapper">
-                      <div className="body-small heading-font-color">Linda Anderson</div>
+                      <div className="body-small heading-font-color">
+                        Linda Anderson
+                      </div>
                       <div>Co-Founder & CEO</div>
                     </div>
                   </div>
@@ -86,10 +94,13 @@ export default function Reviews() {
                       <div className="h6">Faster Hiring</div>
                     </div>
                     <div className="body-medium">
-                      “They have a great understanding of HR strategies and how to apply them effectively”
+                      “They have a great understanding of HR strategies and how
+                      to apply them effectively”
                     </div>
                     <div className="client-info-wrapper">
-                      <div className="body-small heading-font-color">Adam Smith</div>
+                      <div className="body-small heading-font-color">
+                        Adam Smith
+                      </div>
                       <div>Co-Founder & CEO</div>
                     </div>
                   </div>
@@ -111,10 +122,13 @@ export default function Reviews() {
                       <div className="h6">Faster Hiring</div>
                     </div>
                     <div className="body-medium">
-                      “They have a great understanding of HR strategies and how to apply them effectively”
+                      “They have a great understanding of HR strategies and how
+                      to apply them effectively”
                     </div>
                     <div className="client-info-wrapper">
-                      <div className="body-small heading-font-color">Adam Smith</div>
+                      <div className="body-small heading-font-color">
+                        Adam Smith
+                      </div>
                       <div>Co-Founder & CEO</div>
                     </div>
                   </div>
@@ -136,10 +150,13 @@ export default function Reviews() {
                       <div className="h6">Relevant Profiles</div>
                     </div>
                     <div className="body-medium">
-                      “They have a great understanding of HR strategies and how to apply them effectively”
+                      “They have a great understanding of HR strategies and how
+                      to apply them effectively”
                     </div>
                     <div className="client-info-wrapper">
-                      <div className="body-small heading-font-color">Linda Anderson</div>
+                      <div className="body-small heading-font-color">
+                        Linda Anderson
+                      </div>
                       <div>Co-Founder & CEO</div>
                     </div>
                   </div>
@@ -161,10 +178,13 @@ export default function Reviews() {
                       <div className="h6">Faster Hiring</div>
                     </div>
                     <div className="body-medium">
-                      “They have a great understanding of HR strategies and how to apply them effectively”
+                      “They have a great understanding of HR strategies and how
+                      to apply them effectively”
                     </div>
                     <div className="client-info-wrapper">
-                      <div className="body-small heading-font-color">Adam Smith</div>
+                      <div className="body-small heading-font-color">
+                        Adam Smith
+                      </div>
                       <div>Co-Founder & CEO</div>
                     </div>
                   </div>
@@ -175,18 +195,43 @@ export default function Reviews() {
               <div className="slider-arrow-wrapper fliped">
                 <div className="arrow-line"></div>
                 <div className="arrow-embed w-embed">
-                  <svg width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1.67774 2.27539L8.74243 9.344L1.67383 16.4087" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
+                  <svg
+                    width="11"
+                    height="18"
+                    viewBox="0 0 11 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1.67774 2.27539L8.74243 9.344L1.67383 16.4087"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="square"
+                    />
                   </svg>
                 </div>
               </div>
             </div>
-            <div data-w-id="e52796e2-d9df-ebbe-e137-3fa61aaf5a68" className="slider-arrow w-slider-arrow-right">
+            <div
+              data-w-id="e52796e2-d9df-ebbe-e137-3fa61aaf5a68"
+              className="slider-arrow w-slider-arrow-right"
+            >
               <div className="slider-arrow-wrapper">
                 <div className="arrow-line"></div>
                 <div className="arrow-embed w-embed">
-                  <svg width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1.67774 2.27539L8.74243 9.344L1.67383 16.4087" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
+                  <svg
+                    width="11"
+                    height="18"
+                    viewBox="0 0 11 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1.67774 2.27539L8.74243 9.344L1.67383 16.4087"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="square"
+                    />
                   </svg>
                 </div>
               </div>

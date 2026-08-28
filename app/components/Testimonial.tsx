@@ -8,7 +8,7 @@ export default function Testimonial() {
               data-w-id="e2b8457d-0e99-2648-0de0-de970db58d52"
               className="testimonial-tag"
             >
-<div className="testimonial-tag-arrow-container">
+              <div className="testimonial-tag-arrow-container">
                 <div className="testimonial-tag-arrow-wrapper">
                   <img
                     src="https://cdn.prod.website-files.com/6543eed5397deb6f75475c49/6543eed5397deb6f75475c77_Button%20Arrow.svg"
@@ -48,7 +48,10 @@ export default function Testimonial() {
               />
             </div>
           </div>
-          <a href="#" className="testimonial-light-box w-inline-block w-lightbox">
+          <a
+            href="#"
+            className="testimonial-light-box w-inline-block w-lightbox"
+          >
             <div
               data-poster-url="https://cdn.prod.website-files.com/650ff2343fda489a4a654c9e/65391ab60ec8babd3998f538_pexels-diva-plavalaguna-6985491 (720p)-poster-00001.jpg"
               data-video-urls="https://cdn.prod.website-files.com/6543eed5397deb6f75475c49/6543eed5397deb6f75475c97_pexels-diva-plavalaguna-6985491%20(720p)-transcode.mp4,https://cdn.prod.website-files.com/6543eed5397deb6f75475c49/6543eed5397deb6f75475c97_pexels-diva-plavalaguna-6985491%20(720p)-transcode.webm"

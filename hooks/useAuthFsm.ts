@@ -199,8 +199,11 @@ export function useAuthFsm(mode: AuthMode) {
           if (list && list.length > 0) {
             const session = await authClient.getSession();
             const activeId =
-              (session.data as unknown as { session?: { activeOrganizationId?: string | null } } | null)?.session
-                ?.activeOrganizationId ?? null;
+              (
+                session.data as unknown as {
+                  session?: { activeOrganizationId?: string | null };
+                } | null
+              )?.session?.activeOrganizationId ?? null;
             if (!activeId) {
               await authClient.organization.setActive({
                 organizationId: list[0].id,

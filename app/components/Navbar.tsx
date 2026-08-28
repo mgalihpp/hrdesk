@@ -184,11 +184,17 @@ export default function Navbar() {
                 </a>
               </div>
               <div className="nav-buttons">
-                <a href="/login" className="nav-link change-font-color w-nav-link">
+                <a
+                  href="/login"
+                  className="nav-link change-font-color w-nav-link"
+                >
                   Login
                 </a>
                 <div className="nav-btn">
-                  <a href="/signup" className="secondary-button equal-padding w-button">
+                  <a
+                    href="/signup"
+                    className="secondary-button equal-padding w-button"
+                  >
                     Signup
                   </a>
                 </div>

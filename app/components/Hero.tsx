@@ -6,16 +6,17 @@ export default function Hero() {
           <div className="home-hero-text-wrapper">
             <div className="home-hero-heading">
               <h1 className="display-h1">
-                All-in-one <span className="yellow-highlighted-text">Payroll</span>{" "}
-                and <span className="pink-highlighted-text">HR</span> System for small
-                team
+                All-in-one{" "}
+                <span className="yellow-highlighted-text">Payroll</span> and{" "}
+                <span className="pink-highlighted-text">HR</span> System for
+                small team
               </h1>
             </div>
             <div className="home-hero-para-wrapper">
               <p className="body-large">
                 Helping them establish efficient{" "}
-                <span className="heading-font-color">HR operations</span>, manage
-                growing teams, and{" "}
+                <span className="heading-font-color">HR operations</span>,
+                manage growing teams, and{" "}
                 <span className="heading-font-color">stay compliant.</span>
               </p>
               <div className="button-and-cc-details-wrapper">

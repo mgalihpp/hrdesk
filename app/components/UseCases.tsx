@@ -6,12 +6,16 @@ export default function UseCases() {
         <div className="use-case-container">
           <div className="use-case-heading-wrapper">
             <h3 className="section-title-h2 white-font-color">
-              Amazing use case for <br />Individuals &amp; Agencies <br />
+              Amazing use case for <br />
+              Individuals &amp; Agencies <br />
             </h3>
           </div>
           <div className="use-case-blocks-wrapper">
             <div className="use-case-block-row">
-              <div data-w-id="606e7bc6-cd2b-63a7-0618-2c2ca3dfb932" className="use-case-block">
+              <div
+                data-w-id="606e7bc6-cd2b-63a7-0618-2c2ca3dfb932"
+                className="use-case-block"
+              >
                 <div className="use-case-block-elements-wrapper">
                   <img
                     src="https://cdn.prod.website-files.com/6507f776b9661ba4aa7204b4/6517e900918135f76f482b9a_Vectors-Wrapper.svg"
@@ -27,8 +31,10 @@ export default function UseCases() {
                     </div>
                     <p className="body-large">
                       Saasland HR provides cost-effective HR solutions for{" "}
-                      <span className="heading-font-color">startups and SMBs</span>,
-                      helping them establish efficient{" "}
+                      <span className="heading-font-color">
+                        startups and SMBs
+                      </span>
+                      , helping them establish efficient{" "}
                       <span className="heading-font-color">HR operations.</span>
                     </p>
                   </div>
@@ -50,7 +56,9 @@ export default function UseCases() {
                     </div>
                     <p className="body-large">
                       Recruitment agencies can utilize Saasland HR to{" "}
-                      <span className="heading-font-color">streamline candidate</span>{" "}
+                      <span className="heading-font-color">
+                        streamline candidate
+                      </span>{" "}
                       management, track placements.
                     </p>
                   </div>
@@ -97,7 +105,10 @@ export default function UseCases() {
                     </div>
                     <p className="body-large">
                       Non-profits can use Saasland HR to effectively
-                      <span className="heading-font-color"> manage volunteer</span>{" "}
+                      <span className="heading-font-color">
+                        {" "}
+                        manage volunteer
+                      </span>{" "}
                       programs, track donor contributions.
                     </p>
                   </div>

@@ -1,4 +1,9 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from "node:crypto";
 
 // App-layer encryption for PII (SSN, bank). Mongo has no column-level encryption,
 // so we encrypt at write and decrypt at read, server-side only.

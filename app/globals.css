@@ -40,13 +40,13 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-sm: calc(var(--radius));
+  --radius-md: calc(var(--radius));
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius));
+  --radius-2xl: calc(var(--radius));
+  --radius-3xl: calc(var(--radius));
+  --radius-4xl: calc(var(--radius));
   --radius-pill: var(--radius-pill);
   --radius-card: var(--radius-card);
   --radius-usecase: var(--radius-usecase);
@@ -145,7 +145,7 @@
 
 :root {
   /* §14.4 Radii */
-  --radius: 30px;
+  --radius: 0.625rem;
   --radius-pill: 100px;
   --radius-card: 30px;
   --radius-usecase: 50px;
