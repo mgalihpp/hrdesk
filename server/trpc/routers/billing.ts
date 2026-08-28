@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { cents } from "@/lib/money";
 import type { InvoiceId } from "@/lib/types";
+import { auditRepo } from "@/server/repo/audit";
 import { billingRepo } from "@/server/repo/billing";
 import {
   createTRPCRouter,
@@ -22,9 +23,19 @@ export const billingRouter = createTRPCRouter({
         seats: z.number().int().min(1).default(1),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const repo = billingRepo(ctx.prisma, ctx.session.tenantId);
-      return repo.upsertSubscription(input);
+      const result = await repo.upsertSubscription(input);
+      try {
+        await auditRepo(ctx.prisma, ctx.session.tenantId).create({
+          actorId: ctx.session.id,
+          action: "billing.upsertSubscription",
+          targetType: "subscription",
+          targetId: result.id,
+          metadata: JSON.stringify({ plan: input.plan }),
+        });
+      } catch {}
+      return result;
     }),
 
   listInvoices: protectedProcedure.query(({ ctx }) => {
@@ -42,18 +53,27 @@ export const billingRouter = createTRPCRouter({
         idempotencyKey: z.string().min(1).optional(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const repo = billingRepo(ctx.prisma, ctx.session.tenantId);
       const key =
         input.idempotencyKey ??
         `${ctx.session.tenantId}:${input.periodStart}:${input.periodEnd}:${input.amount}:${input.billingInterval}`;
-      return repo.createInvoice({
+      const result = await repo.createInvoice({
         amount: cents(input.amount),
         periodStart: input.periodStart,
         periodEnd: input.periodEnd,
         billingInterval: input.billingInterval,
         idempotencyKey: key,
       });
+      try {
+        await auditRepo(ctx.prisma, ctx.session.tenantId).create({
+          actorId: ctx.session.id,
+          action: "billing.createInvoice",
+          targetType: "invoice",
+          targetId: result.id,
+        });
+      } catch {}
+      return result;
     }),
 
   getInvoice: protectedProcedure

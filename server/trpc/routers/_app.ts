@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../init";
+import { auditRouter } from "./audit";
 import { billingRouter } from "./billing";
 import { candidateRouter } from "./candidate";
 import { employeeRouter } from "./employee";
@@ -8,6 +9,7 @@ import { jobRouter } from "./job";
 import { meRouter } from "./me";
 import { orgRouter } from "./org";
 import { payrunRouter } from "./payrun";
+import { reportingRouter } from "./reporting";
 import { leaveRouter, timeEntryRouter } from "./timeEntry";
 export const appRouter = createTRPCRouter({
   health: publicProcedure
@@ -23,6 +25,8 @@ export const appRouter = createTRPCRouter({
   candidate: candidateRouter,
   billing: billingRouter,
   integration: integrationRouter,
+  reporting: reportingRouter,
+  audit: auditRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -335,3 +335,18 @@ model IntegrationSync {
   @@index([connectionId])
   @@map("integration_sync")
 }
+
+model AuditLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId   String
+  actorId    String   @db.ObjectId
+  action     String
+  targetType String
+  targetId   String
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@map("audit_log")
+}

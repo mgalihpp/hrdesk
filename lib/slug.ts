@@ -13,6 +13,8 @@ export function toSlug(input: string): OrgSlug {
 }
 
 export function deriveOrgSlug(args: { name: string; email: string }): OrgSlug {
+  const trimmedName = args.name?.trim();
+  if (trimmedName && trimmedName.length >= 2) return toSlug(trimmedName);
   const domain = args.email.split("@")[1]?.split(".")[0];
   const source = domain && domain.length >= 2 ? domain : args.name;
   return toSlug(source);

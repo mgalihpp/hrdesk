@@ -5,6 +5,7 @@ import {
   isKnownProvider,
 } from "@/lib/integrations/registry";
 import type { IntegrationConnectionId, IntegrationSyncId } from "@/lib/types";
+import { auditRepo } from "@/server/repo/audit";
 import { integrationRepo } from "@/server/repo/integration";
 import {
   createTRPCRouter,
@@ -36,34 +37,55 @@ export const integrationRouter = createTRPCRouter({
         config: z.record(z.string(), z.unknown()).optional(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       if (!isKnownProvider(input.provider)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: `Unknown provider: ${input.provider}`,
         });
       }
-      return integrationRepo(ctx.prisma, ctx.session.tenantId).upsertConnection(
-        {
-          provider: input.provider as unknown as never,
-          credentials: (input.credentials ?? null) as unknown as Record<
-            string,
-            unknown
-          > | null,
-          config: (input.config ?? null) as unknown as Record<
-            string,
-            unknown
-          > | null,
-        },
-      );
+      const result = await integrationRepo(
+        ctx.prisma,
+        ctx.session.tenantId,
+      ).upsertConnection({
+        provider: input.provider as unknown as never,
+        credentials: (input.credentials ?? null) as unknown as Record<
+          string,
+          unknown
+        > | null,
+        config: (input.config ?? null) as unknown as Record<
+          string,
+          unknown
+        > | null,
+      });
+      try {
+        await auditRepo(ctx.prisma, ctx.session.tenantId).create({
+          actorId: ctx.session.id,
+          action: "integration.connect",
+          targetType: "integration_connection",
+          targetId: result.id,
+          metadata: JSON.stringify({ provider: input.provider }),
+        });
+      } catch {}
+      return result;
     }),
 
   disconnect: rbacAnyProcedure(["owner", "admin"])
     .input(z.object({ id: z.string() }))
-    .mutation(({ ctx, input }) => {
-      return integrationRepo(ctx.prisma, ctx.session.tenantId).disconnect(
-        input.id as IntegrationConnectionId,
-      );
+    .mutation(async ({ ctx, input }) => {
+      const result = await integrationRepo(
+        ctx.prisma,
+        ctx.session.tenantId,
+      ).disconnect(input.id as IntegrationConnectionId);
+      try {
+        await auditRepo(ctx.prisma, ctx.session.tenantId).create({
+          actorId: ctx.session.id,
+          action: "integration.disconnect",
+          targetType: "integration_connection",
+          targetId: input.id,
+        });
+      } catch {}
+      return result;
     }),
 
   listSyncs: protectedProcedure
@@ -85,8 +107,11 @@ export const integrationRouter = createTRPCRouter({
         idempotencyKey: z.string().optional(),
       }),
     )
-    .mutation(({ ctx, input }) => {
-      return integrationRepo(ctx.prisma, ctx.session.tenantId).createSync({
+    .mutation(async ({ ctx, input }) => {
+      const result = await integrationRepo(
+        ctx.prisma,
+        ctx.session.tenantId,
+      ).createSync({
         connectionId: input.connectionId as IntegrationConnectionId,
         direction: input.direction as unknown as never,
         payload: input.payload as unknown as
@@ -94,6 +119,16 @@ export const integrationRouter = createTRPCRouter({
           | undefined,
         idempotencyKey: input.idempotencyKey ?? null,
       });
+      try {
+        await auditRepo(ctx.prisma, ctx.session.tenantId).create({
+          actorId: ctx.session.id,
+          action: "integration.trigger",
+          targetType: "integration_sync",
+          targetId: result.id,
+          metadata: JSON.stringify({ connectionId: input.connectionId }),
+        });
+      } catch {}
+      return result;
     }),
 
   ingestWebhook: rbacAnyProcedure(["owner", "admin"])
