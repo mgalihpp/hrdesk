@@ -20,17 +20,17 @@ export function LoginForm() {
   const fieldErrors = state.fieldErrors as Record<string, string | undefined>;
 
   return (
-    <form onSubmit={onSubmit} noValidate>
+    <form onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-6">
       {state.globalError ? (
         <div
           role="alert"
-          className="mb-4 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           {state.globalError}
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3">
+      <div className="flex w-full flex-col gap-4">
         <Field
           id="email"
           name="email"
@@ -54,7 +54,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isBusy}
-        className="submit-button w-button mt-4 w-full"
+        className="submit-button w-button w-full"
       >
         {isBusy ? "Please wait..." : "Login"}
       </button>

@@ -7,7 +7,7 @@ import { AuthShell } from "../_components/AuthShell";
 import { SignupForm } from "../_components/SignupForm";
 
 export const metadata: Metadata = {
-  title: "Signup — Saasdesk",
+  title: "Signup to Saasdesk",
 };
 
 export default async function SignupPage({
