@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import type { TenantId } from "@/lib/types";
-import { employeeRepo, type NewEmployee } from "./employee";
+import { employeeRepo, type NewEmployee } from "@/server/repo/employee";
 
 const TID = (s: string) => s as TenantId;
 

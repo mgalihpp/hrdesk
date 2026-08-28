@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cents } from "@/lib/money";
-import { buildCsv } from "./csv";
-import type { PayrollSeriesPoint } from "./types";
+import { buildCsv } from "@/lib/reporting/csv";
+import type { PayrollSeriesPoint } from "@/lib/reporting/types";
 
 function point(over: Partial<PayrollSeriesPoint> = {}): PayrollSeriesPoint {
   return {

@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import type { SessionUser, TenantId } from "@/lib/types";
-import { appRouter } from "./routers/_app";
+import { appRouter } from "@/server/trpc/routers/_app";
 
 const TID = (s: string) => s as TenantId;
 

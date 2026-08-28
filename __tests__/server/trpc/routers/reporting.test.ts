@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { reportingRouter } from "./reporting";
+import { reportingRouter } from "@/server/trpc/routers/reporting";
 
 function makeCaller(
   roles: string[],

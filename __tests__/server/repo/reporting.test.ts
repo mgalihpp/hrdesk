@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { cents } from "@/lib/money";
 import type { TenantId } from "@/lib/types";
-import { reportingRepo } from "./reporting";
+import { reportingRepo } from "@/server/repo/reporting";
 
 const TENANT_A = "tenantA" as unknown as TenantId;
 const TENANT_B = "tenantB" as unknown as TenantId;

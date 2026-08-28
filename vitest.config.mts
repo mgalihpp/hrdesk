@@ -4,7 +4,8 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["**/*.test.ts"],
+    include: ["__tests__/**/*.test.ts"],
+    exclude: ["node_modules", ".next"],
     env: {
       APP_ENCRYPTION_KEY: "0".repeat(64),
     },

@@ -8,7 +8,7 @@ import {
   payrollSummary,
   pipeline,
   syncHealth,
-} from "./aggregates";
+} from "@/lib/reporting/aggregates";
 
 describe("payrollSummary empty", () => {
   it("returns zeros for empty input", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { isAuditAction, parseAuditAction } from "@/lib/audit/types";
 import type { TenantId } from "@/lib/types";
-import { auditRepo } from "./audit";
+import { auditRepo } from "@/server/repo/audit";
 
 const TENANT_A = "tenantA" as unknown as TenantId;
 const TENANT_B = "tenantB" as unknown as TenantId;

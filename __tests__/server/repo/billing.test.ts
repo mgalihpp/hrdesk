@@ -1,7 +1,7 @@
 import { describe, expect, it, type Mock, vi } from "vitest";
 import { cents } from "@/lib/money";
 import type { BillingInterval, InvoiceId, Plan, TenantId } from "@/lib/types";
-import { billingRepo } from "./billing";
+import { billingRepo } from "@/server/repo/billing";
 
 const TENANT_A = "tenantA" as unknown as TenantId;
 const TENANT_B = "tenantB" as unknown as TenantId;

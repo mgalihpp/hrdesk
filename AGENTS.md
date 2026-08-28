@@ -122,18 +122,17 @@ bun run db:studio                    # prisma studio
 - **DB:** MongoDB (Atlas). Prisma has no Mongo transactions — pay-run atomicity requires native driver session (`mongo.client.startSession().withTransaction`) on a replica set (`docs/build-plan-foundation.md`).
 
 ## Testing & QA
-
-- **Framework:** Vitest 4.1.11 (`vitest.config.mts`: `environment: node`, `include: ["**/*.test.ts"]`, `env.APP_ENCRYPTION_KEY="0".repeat(64)`, alias `@` → root, no `setupFiles`/`globalSetup`/`coverage`).
-- **Inventory:** 33 `*.test.ts` files (0 `*.spec.*`), no jsdom/testing-library/e2e:
-  - `lib` pure (12): `lib/money.test.ts` (Cents invariants), `lib/rate-limit.test.ts` (`vi.useFakeTimers`), `lib/payroll/{engine,engine.property,tax,types}.test.ts` (determinism, reconciliation, progressive brackets, 100-case property loop), `lib/billing/engine.test.ts`, `lib/reporting/{csv,aggregates}.test.ts` (RFC4180 escaping, `deductions+tax+net===gross`), `lib/integrations/{lifecycle,registry}.test.ts`, `lib/recruitment/pipeline.test.ts` (FSM `canTransition`/`isValidStage`).
-  - `server/repo` (12): `employee.test.ts`, `employee.tenant.test.ts`, `payrun.test.ts` (idempotency `idempotencyKey` dedup, tenant isolation), `audit.test.ts` (append-only, cursor pagination, `createdAt gte/lte`), `reporting.test.ts`, `billing.test.ts`, `candidate.test.ts`, `leave.test.ts`, `integration.test.ts`, `timeEntry.test.ts`, `job.test.ts`, `org.test.ts` — all via `vi.fn` per Prisma delegate or plain `fakePrisma` in-memory arrays; `encrypt` seed + `:` delimiter assertion; shared `rows` across two `mockPrisma(rows)` to prove isolation.
-  - `server/trpc` (9): `server/trpc/rbac.test.ts`, `employee.test.ts`, `server/trpc/routers/{billing,candidate,payrun,integration,reporting,job,timeEntry}.test.ts` — `TRPCError` code checks (`FORBIDDEN`/`UNAUTHORIZED`/`BAD_REQUEST`), `caller` via `makeCaller(roles, tenantId, prismaOverride)`.
+- **Framework:** Vitest 4.1.11 (`vitest.config.mts`: `environment: node`, `include: ["__tests__/**/*.test.ts"]`, `env.APP_ENCRYPTION_KEY="0".repeat(64)`, alias `@` → root, no `setupFiles`/`globalSetup`/`coverage`).
+- **Inventory:** 33 `*.test.ts` files under `__tests__/` (0 `*.spec.*`), no jsdom/testing-library/e2e. Source dirs (`lib/`, `server/`) contain no `*.test.ts` — tests are isolated for reader load.
+  - `__tests__/lib` pure (12): `money.test.ts` (Cents invariants), `rate-limit.test.ts` (`vi.useFakeTimers`), `payroll/{engine,engine.property,tax,types}.test.ts` (determinism, reconciliation, progressive brackets, 100-case property loop), `billing/engine.test.ts`, `reporting/{csv,aggregates}.test.ts` (RFC4180 escaping, `deductions+tax+net===gross`), `integrations/{lifecycle,registry}.test.ts`, `recruitment/pipeline.test.ts` (FSM `canTransition`/`isValidStage`).
+  - `__tests__/server/repo` (12): `employee.test.ts`, `employee.tenant.test.ts`, `payrun.test.ts` (idempotency `idempotencyKey` dedup, tenant isolation), `audit.test.ts` (append-only, cursor pagination, `createdAt gte/lte`), `reporting.test.ts`, `billing.test.ts`, `candidate.test.ts`, `leave.test.ts`, `integration.test.ts`, `timeEntry.test.ts`, `job.test.ts`, `org.test.ts` — all via `vi.fn` per Prisma delegate or plain `fakePrisma` in-memory arrays; `encrypt` seed + `:` delimiter assertion; shared `rows` across two `mockPrisma(rows)` to prove isolation.
+  - `__tests__/server/trpc` (9): `rbac.test.ts`, `employee.test.ts`, `routers/{billing,candidate,payrun,integration,reporting,job,timeEntry}.test.ts` — `TRPCError` code checks (`FORBIDDEN`/`UNAUTHORIZED`/`BAD_REQUEST`), `caller` via `makeCaller(roles, tenantId, prismaOverride)`.
 - **Running:**
   ```bash
   bun run test                         # single-shot (CI)
-  bun run test -- lib/money.test.ts   # single file
+  bun run test -- __tests__/lib/money.test.ts   # single file
   bun run test -- --watch             # watch (vitest native)
   ```
 - **Coverage:** None configured (no `coverage{}` block, no `@vitest/coverage-*` in `bun.lock`, `.gitignore` has `/coverage` but nothing generates it). No thresholds; CI does not upload artifacts.
 - **CI QA:** `.github/workflows/ci.yml` (`verify` on `push`/`pull_request`, `ubuntu-latest`, env `DATABASE_URL` + `APP_ENCRYPTION_KEY` + `BETTER_AUTH_*`): `bun install --frozen-lockfile` → `bun run db:generate` → `lint` → `typecheck` → `test` → `build`. No parallel matrix, no DB integration tests (all Prisma mocked), no API route/component/snapshot tests — tenancy asserted via `where.tenantId` mock checks, not real Mongo.
-- **Expectations:** Keep money integer, encryption `:`-delimited, FSM transition, idempotency, and tenant-isolation assertions. Add `*.test.ts` for new repos/routers following `vi.fn` + factory pattern; ensure `from <= to` range guard and `withTransaction` note for multi-write pay-runs.
+- **Expectations:** Keep money integer, encryption `:`-delimited, FSM transition, idempotency, and tenant-isolation assertions. Add `__tests__/**/*.test.ts` mirroring source path (e.g. `__tests__/lib/money.test.ts` for `lib/money.ts`) following `vi.fn` + factory pattern; ensure `from <= to` range guard and `withTransaction` note for multi-write pay-runs.

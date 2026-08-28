@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cents, moneyAdd, moneyGte, moneySub, moneyToMajor } from "./money";
+import { cents, moneyAdd, moneyGte, moneySub, moneyToMajor } from "@/lib/money";
 
 describe("money", () => {
   it("rejects non-integer cents", () => {

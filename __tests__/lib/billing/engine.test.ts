@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import {
+  computeInvoiceAmount,
+  computeSubscriptionAmount,
+} from "@/lib/billing/engine";
+import { getPlan, getPrice, yearlySavingsPercent } from "@/lib/billing/plans";
 import { cents } from "@/lib/money";
 import type { Plan } from "@/lib/types";
-import { computeInvoiceAmount, computeSubscriptionAmount } from "./engine";
-import { getPlan, getPrice, yearlySavingsPercent } from "./plans";
 
 describe("billing engine", () => {
   describe("computeInvoiceAmount base prices", () => {
