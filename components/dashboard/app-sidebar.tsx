@@ -50,7 +50,7 @@ const NAV = [
     href: "/dashboard",
     active: true,
   },
-  { label: "Employees", icon: Users, href: "/dashboard#employees" },
+  { label: "Employees", icon: Users, href: "/dashboard/employees" },
   { label: "Payroll", icon: Wallet, href: "/dashboard#payroll", badge: "3" },
   { label: "Attendance", icon: Clock3, href: "/dashboard#attendance" },
   { label: "Recruitment", icon: Briefcase, href: "/dashboard#recruitment" },
@@ -180,7 +180,10 @@ export function AppSidebar({
                 const isActive =
                   item.href === "/dashboard"
                     ? pathname === "/dashboard"
-                    : false;
+                    : item.href === "/dashboard/employees"
+                      ? pathname === "/dashboard/employees" ||
+                        pathname.startsWith("/dashboard/employees")
+                      : pathname.startsWith(item.href);
                 return (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton
