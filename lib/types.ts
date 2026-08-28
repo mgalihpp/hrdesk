@@ -23,6 +23,8 @@ export interface TRPCContext {
 }
 
 export type EmployeeId = string & { readonly __brand: "EmployeeId" };
+export type PayRunId = string & { readonly __brand: "PayRunId" };
+export type PayslipId = string & { readonly __brand: "PayslipId" };
 
 export type EmployeeStatus = "active" | "on_leave" | "terminated";
 
