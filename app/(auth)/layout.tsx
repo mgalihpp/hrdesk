@@ -1,7 +1,8 @@
 import Footer from "@/app/components/Footer";
 import Navbar from "@/app/components/Navbar";
+import "../webflow.css";
+import "../nav.css";
 import type { Metadata } from "next";
-
 export const metadata: Metadata = {
   title: "Saasdesk — Auth",
 };
