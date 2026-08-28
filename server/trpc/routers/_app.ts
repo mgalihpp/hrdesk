@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure } from "../init";
 import { employeeRouter } from "./employee";
 import { meRouter } from "./me";
 import { orgRouter } from "./org";
+import { payrunRouter } from "./payrun";
 
 export const appRouter = createTRPCRouter({
   health: publicProcedure
@@ -11,6 +12,7 @@ export const appRouter = createTRPCRouter({
   me: meRouter,
   org: orgRouter,
   employee: employeeRouter,
+  payrun: payrunRouter,
 });
 
 export type AppRouter = typeof appRouter;
