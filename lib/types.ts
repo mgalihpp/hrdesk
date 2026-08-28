@@ -68,6 +68,12 @@ export type TimeEntryId = string & { readonly __brand: "TimeEntryId" };
 export type LeaveId = string & { readonly __brand: "LeaveId" };
 export type JobId = string & { readonly __brand: "JobId" };
 export type CandidateId = string & { readonly __brand: "CandidateId" };
+export type IntegrationConnectionId = string & {
+  readonly __brand: "IntegrationConnectionId";
+};
+export type IntegrationSyncId = string & {
+  readonly __brand: "IntegrationSyncId";
+};
 
 export type TimeEntryType = "clock" | "shift" | "manual";
 export type TimeEntryStatus = "pending" | "approved" | "rejected";

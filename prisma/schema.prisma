@@ -298,3 +298,40 @@ model Invoice {
   @@index([subscriptionId])
   @@map("invoice")
 }
+
+model IntegrationConnection {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId       String
+  provider       String
+  status         String    @default("pending")
+  credentialsEnc String    @default("")
+  configJson     String    @default("{}")
+  lastSyncAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([tenantId, provider])
+  @@index([tenantId])
+  @@map("integration_connection")
+}
+
+model IntegrationSync {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId       String
+  connectionId   String    @db.ObjectId
+  provider       String
+  direction      String    @default("inbound")
+  status         String    @default("pending")
+  idempotencyKey String?   @unique
+  payloadJson    String    @default("{}")
+  error          String?
+  retryCount     Int       @default(0)
+  nextRetryAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, connectionId])
+  @@index([connectionId])
+  @@map("integration_sync")
+}
