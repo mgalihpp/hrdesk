@@ -3,6 +3,7 @@ import { cents } from "@/lib/money";
 import { runPayroll } from "@/lib/payroll/engine";
 import { US_2026_SINGLE_BRACKETS } from "@/lib/payroll/tax";
 import type { Role } from "@/lib/types";
+import { auditRepo } from "@/server/repo/audit";
 import { employeeRepo } from "@/server/repo/employee";
 import { leaveRepo } from "@/server/repo/leave";
 import { payRunRepo } from "@/server/repo/payrun";
@@ -93,6 +94,18 @@ export const payrunRouter = createTRPCRouter({
       const result = runPayroll(payrollInput as never);
       const repo = payRunRepo(ctx.prisma, ctx.session.tenantId);
       const saved = await repo.create(result as never);
+      try {
+        await auditRepo(ctx.prisma, ctx.session.tenantId).create({
+          actorId: ctx.session.id,
+          action: "payrun.create",
+          targetType: "payrun",
+          targetId: saved.id,
+          metadata: JSON.stringify({
+            periodStart: input.periodStart,
+            periodEnd: input.periodEnd,
+          }),
+        });
+      } catch {}
       return { ...saved, timeSummary };
     }),
 
@@ -154,6 +167,15 @@ export const payrunRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const repo = payRunRepo(ctx.prisma, ctx.session.tenantId);
-      return repo.lock(input.id as never);
+      const result = await repo.lock(input.id as never);
+      try {
+        await auditRepo(ctx.prisma, ctx.session.tenantId).create({
+          actorId: ctx.session.id,
+          action: "payrun.lock",
+          targetType: "payrun",
+          targetId: input.id,
+        });
+      } catch {}
+      return result;
     }),
 });
