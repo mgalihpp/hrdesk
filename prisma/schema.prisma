@@ -149,3 +149,50 @@ model Employee {
   @@index([tenantId])
   @@unique([tenantId, email])
 }
+
+model PayRun {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId        String
+  entityId        String   @default("default")
+  periodStart     String
+  periodEnd       String
+  status          String   @default("draft")
+  idempotencyKey  String   @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, periodStart, periodEnd])
+  @@map("pay_run")
+}
+
+model Payslip {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId   String
+  payRunId   String   @db.ObjectId
+  employeeId String   @db.ObjectId
+  gross      Int
+  deductions Int
+  tax        Int
+  net        Int
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([payRunId])
+  @@map("payslip")
+}
+
+model PayItem {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId  String
+  payslipId String @db.ObjectId
+  payRunId  String @db.ObjectId
+  category  String
+  amount    Int
+  label     String
+
+  @@index([tenantId])
+  @@index([payslipId])
+  @@index([payRunId])
+  @@map("pay_item")
+}
