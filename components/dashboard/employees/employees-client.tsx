@@ -399,7 +399,7 @@ export function EmployeesClient() {
                   setPage(1);
                 }}
                 placeholder="Search employees..."
-                className="h-9 rounded-lg border bg-white pl-9"
+                className="h-9 rounded-lg border-border bg-muted pl-9"
               />
             </div>
             <Select
@@ -409,7 +409,7 @@ export function EmployeesClient() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9 w-[180px] rounded-lg bg-white">
+              <SelectTrigger className="h-9 w-[180px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Department" />
               </SelectTrigger>
               <SelectContent>
@@ -428,7 +428,7 @@ export function EmployeesClient() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9 w-[150px] rounded-lg bg-white">
+              <SelectTrigger className="h-9 w-[150px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -444,7 +444,7 @@ export function EmployeesClient() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9 w-[170px] rounded-lg bg-white">
+              <SelectTrigger className="h-9 w-[170px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Employment Type" />
               </SelectTrigger>
               <SelectContent>
