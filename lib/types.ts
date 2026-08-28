@@ -75,6 +75,8 @@ export type IntegrationSyncId = string & {
   readonly __brand: "IntegrationSyncId";
 };
 
+export type ReportId = string & { readonly __brand: "ReportId" };
+
 export type TimeEntryType = "clock" | "shift" | "manual";
 export type TimeEntryStatus = "pending" | "approved" | "rejected";
 export type LeaveType = "vacation" | "sick" | "unpaid" | "other";
