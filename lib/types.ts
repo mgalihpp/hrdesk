@@ -22,6 +22,45 @@ export interface TRPCContext {
   prisma: PrismaClient;
 }
 
+export type SubscriptionId = string & { readonly __brand: "SubscriptionId" };
+export type InvoiceId = string & { readonly __brand: "InvoiceId" };
+
+export type Plan = "free" | "starter" | "professional" | "business";
+export type BillingInterval = "monthly" | "yearly";
+export type SubscriptionStatus =
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "trialing";
+export type InvoiceStatus = "draft" | "open" | "paid" | "void";
+
+export interface SubscriptionView {
+  id: SubscriptionId;
+  tenantId: TenantId;
+  plan: Plan;
+  status: SubscriptionStatus;
+  billingInterval: BillingInterval;
+  seats: number;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  renewsAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceView {
+  id: InvoiceId;
+  tenantId: TenantId;
+  subscriptionId: SubscriptionId | null;
+  amount: Cents;
+  status: InvoiceStatus;
+  billingInterval: BillingInterval;
+  periodStart: string;
+  periodEnd: string;
+  idempotencyKey: string;
+  createdAt: string;
+}
+
 export type EmployeeId = string & { readonly __brand: "EmployeeId" };
 export type PayRunId = string & { readonly __brand: "PayRunId" };
 export type PayslipId = string & { readonly __brand: "PayslipId" };
@@ -91,10 +130,9 @@ export interface EmployeeView {
   status: EmployeeStatus;
   createdAt: string;
 }
-
 export interface TenantSettings {
   tenantId: TenantId;
-  plan: "free" | "growth" | "scale";
+  plan: Plan | "growth" | "scale";
   taxLocale: "US" | "ID";
   brandingName: string;
   brandingLogoUrl: string;

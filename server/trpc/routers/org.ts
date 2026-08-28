@@ -10,7 +10,9 @@ import {
 const WRITE_ROLES: Role[] = ["owner", "admin", "hr"];
 
 const updateSchema = z.object({
-  plan: z.enum(["free", "growth", "scale"]).optional(),
+  plan: z
+    .enum(["free", "growth", "scale", "starter", "professional", "business"])
+    .optional(),
   taxLocale: z.enum(["US", "ID"]).optional(),
   brandingName: z.string().optional(),
   brandingLogoUrl: z.string().optional(),

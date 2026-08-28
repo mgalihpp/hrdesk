@@ -266,3 +266,35 @@ model Candidate {
   @@index([tenantId, stage])
   @@map("candidate")
 }
+model Subscription {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId           String   @unique
+  plan               String
+  status             String   @default("active")
+  billingInterval    String   @default("monthly")
+  seats              Int      @default(1)
+  currentPeriodStart String
+  currentPeriodEnd   String
+  renewsAt           DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("subscription")
+}
+
+model Invoice {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId        String
+  subscriptionId  String?  @db.ObjectId
+  amount          Int
+  status          String   @default("open")
+  billingInterval String
+  periodStart     String
+  periodEnd       String
+  idempotencyKey  String   @unique
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@map("invoice")
+}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../init";
+import { billingRouter } from "./billing";
 import { candidateRouter } from "./candidate";
 import { employeeRouter } from "./employee";
 import { jobRouter } from "./job";
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   leave: leaveRouter,
   job: jobRouter,
   candidate: candidateRouter,
+  billing: billingRouter,
 });
 
 export type AppRouter = typeof appRouter;
