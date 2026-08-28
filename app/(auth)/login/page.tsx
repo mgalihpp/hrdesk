@@ -22,7 +22,7 @@ export default async function LoginPage({
     resolved && typeof (resolved as { next?: string }).next === "string"
       ? ((resolved as { next?: string }).next ?? null)
       : null;
-  const dest = sanitizeNext(rawNext) ?? "/";
+  const dest = sanitizeNext(rawNext) ?? "/dashboard";
 
   const h = await headers();
   const s = await auth.api.getSession({ headers: h });

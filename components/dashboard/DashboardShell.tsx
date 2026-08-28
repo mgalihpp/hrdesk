@@ -1,6 +1,8 @@
-import { ShellProviders } from "@/components/dashboard/ShellProviders";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { ShellProviders } from "@/components/dashboard/ShellProviders";
 import { Topbar } from "@/components/dashboard/Topbar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { DashboardShellProps } from "@/lib/types";
 
 export function DashboardShell({
@@ -11,13 +13,17 @@ export function DashboardShell({
 }: DashboardShellProps) {
   return (
     <ShellProviders user={user} org={org} orgs={orgs}>
-      <div className="flex min-h-screen bg-background text-foreground">
-        <Sidebar role={org.role} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar />
-          <main className="flex-1 bg-muted/30 p-6 md:p-8">{children}</main>
-        </div>
-      </div>
+      <TooltipProvider delayDuration={0}>
+        <SidebarProvider>
+          <Sidebar role={org.role} />
+          <SidebarInset>
+            <Topbar />
+            <div className="flex flex-1 flex-col bg-background p-6 md:p-8">
+              {children}
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      </TooltipProvider>
     </ShellProviders>
   );
 }

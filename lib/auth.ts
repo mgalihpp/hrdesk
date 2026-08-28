@@ -47,6 +47,14 @@ export const auth = betterAuth({
   emailAndPassword: { enabled: true },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
+  advanced: {
+    database: {
+      // MongoDB + Prisma uses @default(auto()) @db.ObjectId (24-hex).
+      // Better Auth's default nanoid (e.g. "Jxlr...") fails P2023.
+      // Let Mongo generate the ObjectId instead.
+      generateId: false,
+    },
+  },
   plugins: [
     organization({
       ac,

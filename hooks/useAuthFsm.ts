@@ -100,7 +100,7 @@ export function useAuthFsm(mode: AuthMode) {
       dispatch({ type: "SUBMIT_START" });
       const { name, email, password } = parsed.data;
       const nextRaw = searchParams.get("next");
-      const next = sanitizeNext(nextRaw) ?? "/";
+      const next = sanitizeNext(nextRaw) ?? "/dashboard";
 
       try {
         const signUpRes = await authClient.signUp.email({
@@ -182,7 +182,7 @@ export function useAuthFsm(mode: AuthMode) {
       dispatch({ type: "SUBMIT_START" });
       const { email, password } = parsed.data;
       const nextRaw = searchParams.get("next");
-      const next = sanitizeNext(nextRaw) ?? "/";
+      const next = sanitizeNext(nextRaw) ?? "/dashboard";
 
       try {
         const res = await authClient.signIn.email({
