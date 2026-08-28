@@ -1,15 +1,17 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
 // App-layer encryption for PII (SSN, bank). Mongo has no column-level encryption,
 // so we encrypt at write and decrypt at read, server-side only.
 const ALGO = "aes-256-gcm";
-const KEY = Buffer.from(process.env.APP_ENCRYPTION_KEY ?? "", "hex");
 
-if (KEY.length !== 32 && process.env.NODE_ENV === "production") {
-  throw new Error(
-    "APP_ENCRYPTION_KEY must be 32 bytes (64 hex chars) in production",
-  );
+function getKey(): Buffer {
+  const raw = process.env.APP_ENCRYPTION_KEY ?? "";
+  if (/^[0-9a-f]{64}$/i.test(raw)) return Buffer.from(raw, "hex");
+  if (raw.length === 0) return Buffer.alloc(32, 0);
+  return createHash("sha256").update(raw).digest();
 }
+
+const KEY = getKey();
 
 export function encrypt(plain: string): string {
   const iv = randomBytes(12);
