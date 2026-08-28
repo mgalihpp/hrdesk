@@ -3,8 +3,8 @@ import { cents } from "@/lib/money";
 import type { BillingInterval, Plan } from "@/lib/types";
 import { getPlan, getPrice } from "./plans";
 
-const PER_SEAT_MONTHLY: Cents = cents(500);
-const PER_SEAT_YEARLY: Cents = cents(350);
+export const PER_SEAT_MONTHLY: Cents = cents(500);
+export const PER_SEAT_YEARLY: Cents = cents(350);
 
 export function computeInvoiceAmount(
   plan: Plan,
