@@ -1,5 +1,3 @@
-// Branded primitives. Illegal states are unrepresentable at the type level.
-
 import type { PrismaClient } from "@prisma/client";
 import type { Cents } from "@/lib/money";
 
@@ -28,7 +26,6 @@ export type EmployeeId = string & { readonly __brand: "EmployeeId" };
 
 export type EmployeeStatus = "active" | "on_leave" | "terminated";
 
-// Stored shape. PII fields are ciphertext produced by lib/crypto.
 export interface Employee {
   id: EmployeeId;
   tenantId: TenantId;
@@ -43,7 +40,6 @@ export interface Employee {
   createdAt: string;
 }
 
-// Read shape. PII is decrypted server-side before it leaves the repository.
 export interface EmployeeView {
   id: EmployeeId;
   tenantId: TenantId;
@@ -66,3 +62,35 @@ export interface TenantSettings {
   brandingLogoUrl: string;
   updatedAt: string;
 }
+
+export interface OrgSummary {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  role: Role;
+  plan: string;
+}
+
+export type ShellUser = SessionUser & {
+  name: string;
+  email: string;
+  image: string | null;
+};
+
+export interface DashboardShellProps {
+  user: ShellUser;
+  org: OrgSummary;
+  orgs: OrgSummary[];
+  children: React.ReactNode;
+}
+
+export type ShellSession =
+  | {
+      kind: "authenticated";
+      user: ShellUser;
+      org: OrgSummary;
+      orgs: OrgSummary[];
+    }
+  | { kind: "noSession" }
+  | { kind: "noOrg"; user: ShellUser; orgs: [] };
