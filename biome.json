@@ -17,7 +17,12 @@
       "assist": { "enabled": false }
     },
     {
-      "includes": ["app/components/**", "app/webflow.css", "app/nav.css"],
+      "includes": [
+        "app/components/**",
+        "app/webflow.css",
+        "app/nav.css",
+        "app/(auth)/**"
+      ],
       "linter": {
         "rules": {
           "a11y": {
@@ -38,6 +43,25 @@
           "suspicious": {
             "noArrayIndexKey": "off",
             "useIterableCallbackReturn": "off"
+          },
+          "performance": {
+            "noImgElement": "off"
+          },
+          "complexity": {
+            "noImportantStyles": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          },
+          "correctness": {
+            "noUnusedFunctionParameters": "off"
           }
         }
       }
