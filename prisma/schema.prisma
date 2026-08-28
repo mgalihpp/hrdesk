@@ -196,3 +196,39 @@ model PayItem {
   @@index([payRunId])
   @@map("pay_item")
 }
+
+model TimeEntry {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId   String
+  employeeId String   @db.ObjectId
+  type       String
+  startAt    DateTime
+  endAt      DateTime
+  status     String   @default("pending")
+  approvedBy String?  @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@index([tenantId, startAt])
+  @@map("time_entry")
+}
+
+model Leave {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId   String
+  employeeId String   @db.ObjectId
+  type       String
+  startDate  String
+  endDate    String
+  status     String   @default("pending")
+  reason     String?
+  approvedBy String?  @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@map("leave")
+}

@@ -25,6 +25,40 @@ export interface TRPCContext {
 export type EmployeeId = string & { readonly __brand: "EmployeeId" };
 export type PayRunId = string & { readonly __brand: "PayRunId" };
 export type PayslipId = string & { readonly __brand: "PayslipId" };
+export type TimeEntryId = string & { readonly __brand: "TimeEntryId" };
+export type LeaveId = string & { readonly __brand: "LeaveId" };
+
+export type TimeEntryType = "clock" | "shift" | "manual";
+export type TimeEntryStatus = "pending" | "approved" | "rejected";
+export type LeaveType = "vacation" | "sick" | "unpaid" | "other";
+export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
+
+export interface TimeEntry {
+  id: TimeEntryId;
+  tenantId: TenantId;
+  employeeId: EmployeeId;
+  type: TimeEntryType;
+  startAt: string;
+  endAt: string;
+  status: TimeEntryStatus;
+  approvedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Leave {
+  id: LeaveId;
+  tenantId: TenantId;
+  employeeId: EmployeeId;
+  type: LeaveType;
+  startDate: string;
+  endDate: string;
+  status: LeaveStatus;
+  reason: string | null;
+  approvedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type EmployeeStatus = "active" | "on_leave" | "terminated";
 
