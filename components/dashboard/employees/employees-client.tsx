@@ -491,7 +491,7 @@ export function EmployeesClient() {
                 {COLUMNS.slice(1).map((c) => (
                   <TableHead
                     key={c.key}
-                    className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground"
+                    className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground"
                   >
                     {c.label}
                   </TableHead>

@@ -558,7 +558,7 @@ export function LeaveRequestsClient() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-[#fcfcfd] text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <tr className="border-b bg-[#fcfcfd] text-left text-[11px] font-semibold tracking-wider text-muted-foreground">
                 <th className="w-10 px-4 py-3">
                   <Checkbox
                     checked={allSelected}

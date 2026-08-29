@@ -844,7 +844,7 @@ export function PayrollClient() {
                     aria-label="Select all"
                   />
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   <button
                     type="button"
                     onClick={() => setSortAsc((s) => !s)}
@@ -854,13 +854,13 @@ export function PayrollClient() {
                     <ArrowUpDown className="size-3.5" />
                   </button>
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Base Salary
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Allowances
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   <span className="flex flex-col leading-none">
                     <span>Deductions</span>
                     <span className="text-[10px] font-normal normal-case tracking-normal">
@@ -868,13 +868,13 @@ export function PayrollClient() {
                     </span>
                   </span>
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Net Pay
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Status
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Actions
                 </TableHead>
               </TableRow>
