@@ -76,7 +76,7 @@ const NAV_GROUPS = [
       {
         label: "Payroll",
         icon: Wallet,
-        href: "/dashboard#payroll",
+        href: "/dashboard/payroll",
         badge: "3",
       },
       { label: "Payslips", icon: ScrollText, href: "/dashboard#payslips" },
