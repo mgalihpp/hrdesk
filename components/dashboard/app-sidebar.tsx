@@ -3,6 +3,7 @@
 import {
   BarChart3,
   Briefcase,
+  Building2,
   ChevronDown,
   Clock3,
   CreditCard,
@@ -51,6 +52,7 @@ const NAV = [
     active: true,
   },
   { label: "Employees", icon: Users, href: "/dashboard/employees" },
+  { label: "Departments", icon: Building2, href: "/dashboard/departments" },
   { label: "Payroll", icon: Wallet, href: "/dashboard#payroll", badge: "3" },
   { label: "Attendance", icon: Clock3, href: "/dashboard#attendance" },
   { label: "Recruitment", icon: Briefcase, href: "/dashboard#recruitment" },
