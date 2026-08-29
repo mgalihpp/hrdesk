@@ -138,7 +138,16 @@ export function UpcomingEvents() {
   );
 }
 
-export function RecentActivity() {
+export type RecentActivityItem = {
+  id: string;
+  actorName: string;
+  initials: string;
+  label: string;
+  createdAt: Date;
+  timeAgo: string;
+};
+
+export function RecentActivity({ items }: { items: RecentActivityItem[] }) {
   return (
     <div className="rounded-[20px] border bg-white p-5 shadow-[0_1px_2px_rgba(43,43,70,0.06),0_8px_24px_rgba(43,43,70,0.06)]">
       <div className="flex items-center justify-between">
@@ -146,69 +155,33 @@ export function RecentActivity() {
           Recent Activity
         </h3>
         <Link
-          href="#activity"
+          href="/dashboard/audit"
           className="text-sm font-semibold text-[#2563eb] hover:underline"
         >
           View All
         </Link>
       </div>
       <div className="mt-4 space-y-4">
-        <div className="flex items-start gap-3">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-[#f1f5f9] text-xs font-semibold text-[#1e2a4a]">
-              SW
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm leading-tight text-[#1e2a4a]">
-              Sarah Wijaya joined the company
-            </p>
-            <p className="text-xs text-muted-foreground">2 hours ago</p>
-          </div>
-          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-emerald-500" />
-        </div>
-        <div className="flex items-start gap-3">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-[#1e2a5a] text-white text-xs font-semibold">
-              BS
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm leading-tight text-[#1e2a4a]">
-              Budi Santoso leave request approved
-            </p>
-            <p className="text-xs text-muted-foreground">3 hours ago</p>
-          </div>
-          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-emerald-500" />
-        </div>
-        <div className="flex items-start gap-3">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-[#eef2ff] text-xs font-semibold text-[#1e2a4a]">
-              SP
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm leading-tight text-[#1e2a4a]">
-              Payroll for August 2025 completed
-            </p>
-            <p className="text-xs text-muted-foreground">Yesterday, 17:30</p>
-          </div>
-          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-emerald-500" />
-        </div>
-        <div className="flex items-start gap-3">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-[#f1f5f9] text-xs font-semibold text-[#1e2a4a]">
-              AT
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm leading-tight text-[#1e2a4a]">
-              New candidate applied for Product Manager
-            </p>
-            <p className="text-xs text-muted-foreground">Yesterday, 14:15</p>
-          </div>
-          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-[#94a3b8]" />
-        </div>
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No recent activity</p>
+        ) : (
+          items.slice(0, 4).map((item) => (
+            <div key={item.id} className="flex items-start gap-3">
+              <Avatar className="size-8">
+                <AvatarFallback className="bg-[#f1f5f9] text-xs font-semibold text-[#1e2a4a]">
+                  {item.initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-tight text-[#1e2a4a]">
+                  {item.label}
+                </p>
+                <p className="text-xs text-muted-foreground">{item.timeAgo}</p>
+              </div>
+              <span className="mt-1.5 size-2 shrink-0 rounded-full bg-emerald-500" />
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AttendanceCard } from "@/components/dashboard/attendance-card";
 import {
   RecentActivity,
+  type RecentActivityItem,
   RecruitmentOverview,
   UpcomingEvents,
 } from "@/components/dashboard/bottom-cards";
@@ -15,9 +16,15 @@ import { PayrunTable } from "@/components/dashboard/payrun-table";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ReportingSection } from "@/components/dashboard/reporting-section";
 import { Button } from "@/components/ui/button";
+import {
+  formatAuditLabel,
+  formatRelativeTime,
+  getInitials,
+} from "@/lib/audit/format";
 import { prisma } from "@/lib/prisma";
 import { getShellSession } from "@/lib/shell-session";
 import type { TenantId } from "@/lib/types";
+import { auditRepo } from "@/server/repo/audit";
 import { employeeRepo } from "@/server/repo/employee";
 import { payRunRepo } from "@/server/repo/payrun";
 import { reportingRepo } from "@/server/repo/reporting";
@@ -86,13 +93,14 @@ export default async function DashboardPage({
   const repo = reportingRepo(prisma, tenantId);
   const eRepo = employeeRepo(prisma, tenantId);
   const payRepo = payRunRepo(prisma, tenantId);
-  const [overview, series, attendance, payRuns, employeesRaw] = await Promise.all([
-    repo.overview(range),
-    repo.getPayrollSeries(range),
-    repo.getAttendance(range),
-    payRepo.listWithTotals(),
-    eRepo.list(),
-  ]);
+  const [overview, series, attendance, payRuns, employeesRaw] =
+    await Promise.all([
+      repo.overview(range),
+      repo.getPayrollSeries(range),
+      repo.getAttendance(range),
+      payRepo.listWithTotals(),
+      eRepo.list(),
+    ]);
   const employees: EmployeeTableRow[] = employeesRaw.map((e) => ({
     id: e.id as string,
     firstName: e.firstName,
@@ -102,6 +110,29 @@ export default async function DashboardPage({
     status: e.status,
     hireDate: e.hireDate,
   }));
+  const { items: auditItems } = await auditRepo(prisma, tenantId).list({
+    limit: 4,
+  });
+  const actorIds = [...new Set(auditItems.map((a) => a.actorId))];
+  const users =
+    actorIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: actorIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+  const nameById = new Map(users.map((u) => [u.id, u.name]));
+  const recentActivityItems: RecentActivityItem[] = auditItems.map((a) => {
+    const actorName = nameById.get(a.actorId) ?? "Unknown";
+    return {
+      id: a.id as string,
+      actorName,
+      initials: getInitials(actorName),
+      label: formatAuditLabel(a.action, a.metadata),
+      createdAt: a.createdAt,
+      timeAgo: formatRelativeTime(a.createdAt),
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -127,7 +158,7 @@ export default async function DashboardPage({
       <div className="grid gap-6 lg:grid-cols-3">
         <RecruitmentOverview />
         <UpcomingEvents />
-        <RecentActivity />
+        <RecentActivity items={recentActivityItems} />
       </div>
     </div>
   );
