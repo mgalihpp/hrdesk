@@ -69,6 +69,7 @@ export type TimeEntryId = string & { readonly __brand: "TimeEntryId" };
 export type LeaveId = string & { readonly __brand: "LeaveId" };
 export type JobId = string & { readonly __brand: "JobId" };
 export type CandidateId = string & { readonly __brand: "CandidateId" };
+export type InterviewId = string & { readonly __brand: "InterviewId" };
 export type DepartmentId = string & { readonly __brand: "DepartmentId" };
 export type IntegrationConnectionId = string & {
   readonly __brand: "IntegrationConnectionId";

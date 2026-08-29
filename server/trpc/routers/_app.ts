@@ -7,6 +7,7 @@ import { departmentRouter } from "./department";
 import { employeeRouter } from "./employee";
 import { eventRouter } from "./event";
 import { integrationRouter } from "./integration";
+import { interviewRouter } from "./interview";
 import { jobRouter } from "./job";
 import { meRouter } from "./me";
 import { orgRouter } from "./org";
@@ -26,6 +27,7 @@ export const appRouter = createTRPCRouter({
   leave: leaveRouter,
   job: jobRouter,
   candidate: candidateRouter,
+  interview: interviewRouter,
   billing: billingRouter,
   integration: integrationRouter,
   reporting: reportingRouter,
