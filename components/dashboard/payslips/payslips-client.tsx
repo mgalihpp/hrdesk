@@ -13,7 +13,6 @@ import {
   Plus,
   Printer,
   Search,
-  ShoppingCart,
   Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -219,10 +218,6 @@ const PAYSLIPS_MOCK: PayslipRecord[] = [
 ];
 function formatMoney(n: number): string {
   return `$${n.toLocaleString("en-US")}`;
-}
-
-function formatRp(n: number): string {
-  return `Rp${n.toLocaleString("id-ID")}`;
 }
 
 function getInitials(name: string): string {
@@ -1251,18 +1246,14 @@ export function PayslipsClient() {
           {pdfRecord ? (
             <div className="bg-white p-8 text-black">
               <div className="flex flex-col items-center text-center">
-                <div className="flex flex-col items-center text-[#ec4899]">
-                  <ShoppingCart className="size-6" />
-                  <span className="text-[10px] font-semibold tracking-widest">Shopping</span>
-                </div>
-                <h1 className="mt-4 text-xl font-bold tracking-tight">PT Toko Bangun Indonesia</h1>
-                <p className="text-xs">Jl. Contoh No. 45, Jakarta Selatan</p>
+                <img src="/saasdesk-logo.svg" alt="SAASDESK" className="h-7 w-auto" />
+                <p className="mt-2 text-xs text-muted-foreground">123 Business Avenue, South Jakarta</p>
               </div>
               <div className="mt-8">
                 <p className="text-sm font-bold">Pay Slip for the period of {pdfRecord.lastPayrunDate.replace("30 ", "")}</p>
                 <div className="mt-3 grid grid-cols-2 gap-8 text-xs leading-5">
                   <div className="space-y-1">
-                    <div className="flex"><span className="w-[140px]">Employee ID</span><span className="w-4">:</span><span>{pdfRecord.employeeId.replace("EMP", "")}</span></div>
+                    <div className="flex"><span className="w-[140px]">Employee ID</span><span className="w-4">:</span><span>{pdfRecord.employeeId}</span></div>
                     <div className="flex"><span className="w-[140px]">Name</span><span className="w-4">:</span><span>{pdfRecord.employee.name}</span></div>
                     <div className="flex"><span className="w-[140px]">Department</span><span className="w-4">:</span><span>{pdfRecord.department}</span></div>
                     <div className="flex"><span className="w-[140px]">Designation</span><span className="w-4">:</span><span>Sales Executive</span></div>
@@ -1270,45 +1261,45 @@ export function PayslipsClient() {
                   </div>
                   <div className="space-y-1">
                     <div className="flex"><span className="w-[180px]">Date of Joining</span><span className="w-4">:</span><span>01-03-2020</span></div>
-                    <div className="flex"><span className="w-[180px]">No. BPJS Ketenagakerjaan</span><span className="w-4">:</span><span>ID/SA/5678</span></div>
-                    <div className="flex"><span className="w-[180px]">No. BPJS Kesehatan</span><span className="w-4">:</span><span>89</span></div>
+                    <div className="flex"><span className="w-[180px]">Employment Insurance No.</span><span className="w-4">:</span><span>ID/SA/5678</span></div>
+                    <div className="flex"><span className="w-[180px]">Health Insurance No.</span><span className="w-4">:</span><span>89</span></div>
                     <div className="flex"><span className="w-[180px]">Days Worked</span><span className="w-4">:</span><span>22.0</span></div>
-                    <div className="flex"><span className="w-[180px]">Bank Account/Cheque Number</span><span className="w-4">:</span><span>xxxxxxxxxxxx</span></div>
+                    <div className="flex"><span className="w-[180px]">Bank Account / Cheque No.</span><span className="w-4">:</span><span>xxxxxxxxxxxx</span></div>
                   </div>
                 </div>
                 <div className="mt-6 grid grid-cols-2 gap-8">
                   <div>
                     <p className="text-sm font-bold">Earnings</p>
                     <div className="mt-2 space-y-1 text-xs leading-5">
-                      <div className="flex justify-between"><span>Gaji Pokok</span><span className="font-mono">: {formatRp(12000000)}</span></div>
-                      <div className="flex justify-between"><span>Tunjangan Jabatan</span><span className="font-mono">: {formatRp(6000000)}</span></div>
-                      <div className="flex justify-between"><span>Tunjangan Transportasi</span><span className="font-mono">: {formatRp(2500000)}</span></div>
-                      <div className="flex justify-between"><span>Tunjangan Kesehatan</span><span className="font-mono">: {formatRp(1800000)}</span></div>
-                      <div className="flex justify-between"><span>Tunjangan Perumahan</span><span className="font-mono">: {formatRp(4500000)}</span></div>
-                      <div className="flex justify-between"><span>Uang Makan</span><span className="font-mono">: {formatRp(800000)}</span></div>
+                      <div className="flex justify-between"><span>Basic Salary</span><span className="font-mono">: {formatMoney(12000)}</span></div>
+                      <div className="flex justify-between"><span>Position Allowance</span><span className="font-mono">: {formatMoney(6000)}</span></div>
+                      <div className="flex justify-between"><span>Transport Allowance</span><span className="font-mono">: {formatMoney(2500)}</span></div>
+                      <div className="flex justify-between"><span>Health Allowance</span><span className="font-mono">: {formatMoney(1800)}</span></div>
+                      <div className="flex justify-between"><span>Housing Allowance</span><span className="font-mono">: {formatMoney(4500)}</span></div>
+                      <div className="flex justify-between"><span>Meal Allowance</span><span className="font-mono">: {formatMoney(800)}</span></div>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm font-bold">Deductions</p>
                     <div className="mt-2 space-y-1 text-xs leading-5">
-                      <div className="flex justify-between"><span>Pajak Penghasilan (PPh 21)</span><span className="font-mono">: {formatRp(250000)}</span></div>
-                      <div className="flex justify-between"><span>BPJS Ketenagakerjaan</span><span className="font-mono">: {formatRp(1500000)}</span></div>
-                      <div className="flex justify-between"><span>BPJS Kesehatan</span><span className="font-mono">: {formatRp(400000)}</span></div>
+                      <div className="flex justify-between"><span>Income Tax (PPh 21)</span><span className="font-mono">: {formatMoney(250)}</span></div>
+                      <div className="flex justify-between"><span>Employment Insurance</span><span className="font-mono">: {formatMoney(1500)}</span></div>
+                      <div className="flex justify-between"><span>Health Insurance</span><span className="font-mono">: {formatMoney(400)}</span></div>
                     </div>
                   </div>
                 </div>
                 <div className="my-4 h-px bg-black" />
                 <div className="grid grid-cols-2 gap-8 text-xs leading-5">
                   <div className="space-y-2">
-                    <div className="flex"><span className="w-[170px] font-bold">Total Earnings (Rounded)</span><span className="w-4">:</span><span className="font-mono"> {formatRp(27600000)}</span></div>
-                    <div className="flex"><span className="w-[170px] font-bold">Take Home Pay</span><span className="w-4">:</span><span className="font-mono"> {formatRp(25450000)}</span></div>
+                    <div className="flex"><span className="w-[170px] font-bold">Total Earnings (Rounded)</span><span className="w-4">:</span><span className="font-mono"> {formatMoney(27600)}</span></div>
+                    <div className="flex"><span className="w-[170px] font-bold">Take Home Pay</span><span className="w-4">:</span><span className="font-mono"> {formatMoney(25450)}</span></div>
                   </div>
                   <div>
-                    <div className="flex"><span className="w-[150px] font-bold">Total Deductions</span><span className="w-4">:</span><span className="font-mono"> {formatRp(2150000)}</span></div>
+                    <div className="flex"><span className="w-[150px] font-bold">Total Deductions</span><span className="w-4">:</span><span className="font-mono"> {formatMoney(2150)}</span></div>
                   </div>
                 </div>
                 <div className="mt-12 text-right text-xs leading-5">
-                  <p>Jakarta, 20 Agustus 2025</p>
+                  <p>Jakarta, August 20, 2025</p>
                   <p className="mt-10 font-bold">Manager</p>
                 </div>
               </div>
