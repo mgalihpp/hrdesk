@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure } from "../init";
 import { auditRouter } from "./audit";
 import { billingRouter } from "./billing";
 import { candidateRouter } from "./candidate";
+import { departmentRouter } from "./department";
 import { employeeRouter } from "./employee";
 import { eventRouter } from "./event";
 import { integrationRouter } from "./integration";
@@ -12,6 +13,7 @@ import { orgRouter } from "./org";
 import { payrunRouter } from "./payrun";
 import { reportingRouter } from "./reporting";
 import { leaveRouter, timeEntryRouter } from "./timeEntry";
+
 export const appRouter = createTRPCRouter({
   health: publicProcedure
     .input(z.object({}).optional())
@@ -29,6 +31,7 @@ export const appRouter = createTRPCRouter({
   reporting: reportingRouter,
   audit: auditRouter,
   event: eventRouter,
+  department: departmentRouter,
 });
 
 export type AppRouter = typeof appRouter;
