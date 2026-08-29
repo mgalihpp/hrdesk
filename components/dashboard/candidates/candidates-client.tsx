@@ -578,13 +578,11 @@ export function CandidatesClient() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-          <div className="flex items-start justify-between">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-[#eef2ff] text-[#4f46e5]">
-              <Users className="size-5" />
-            </div>
+        <Card className="flex items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-[#eef2ff] text-[#4f46e5] shrink-0">
+            <Users className="size-5" />
           </div>
-          <div className="mt-3">
+          <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
               Total Candidates
             </p>
@@ -597,13 +595,11 @@ export function CandidatesClient() {
             </p>
           </div>
         </Card>
-        <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-          <div className="flex items-start justify-between">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-[#e6fbff] text-[#00acca]">
-              <ClipboardCheck className="size-5" />
-            </div>
+        <Card className="flex items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-[#e6fbff] text-[#00acca] shrink-0">
+            <ClipboardCheck className="size-5" />
           </div>
-          <div className="mt-3">
+          <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
               Active Applications
             </p>
@@ -615,13 +611,11 @@ export function CandidatesClient() {
             </p>
           </div>
         </Card>
-        <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-          <div className="flex items-start justify-between">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-[#fff3e6] text-amber-600">
-              <CalendarDays className="size-5" />
-            </div>
+        <Card className="flex items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-[#fff3e6] text-amber-600 shrink-0">
+            <CalendarDays className="size-5" />
           </div>
-          <div className="mt-3">
+          <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
               Scheduled Interviews
             </p>
@@ -633,13 +627,11 @@ export function CandidatesClient() {
             </p>
           </div>
         </Card>
-        <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-          <div className="flex items-start justify-between">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-[#e6fff0] text-emerald-600">
-              <Tag className="size-5" />
-            </div>
+        <Card className="flex items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-[#e6fff0] text-emerald-600 shrink-0">
+            <Tag className="size-5" />
           </div>
-          <div className="mt-3">
+          <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
               Offers Extended
             </p>
@@ -653,7 +645,7 @@ export function CandidatesClient() {
         </Card>
       </div>
 
-      <Card className="overflow-hidden rounded-[16px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+      <Card className="rounded-[16px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <h2 className="text-[16px] font-semibold text-[#2b2b46]">
             Candidate Pipeline
@@ -737,7 +729,8 @@ export function CandidatesClient() {
                 className={cn(
                   "flex min-h-[320px] w-[280px] min-w-[280px] shrink-0 snap-start flex-col rounded-[12px] p-3 transition",
                   cfg.columnBg,
-                  isDragOver && "ring-2 ring-[#00acca]/20 bg-[#00acca]/5",
+                  isDragOver &&
+                    "ring-2 ring-inset ring-[#00acca]/30 bg-[#e6fbff]",
                 )}
               >
                 <div
