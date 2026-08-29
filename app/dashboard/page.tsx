@@ -86,13 +86,15 @@ export default async function DashboardPage({
   const repo = reportingRepo(prisma, tenantId);
   const eRepo = employeeRepo(prisma, tenantId);
   const payRepo = payRunRepo(prisma, tenantId);
-  const [overview, series, attendance, payRuns, employeesRaw] = await Promise.all([
-    repo.overview(range),
-    repo.getPayrollSeries(range),
-    repo.getAttendance(range),
-    payRepo.listWithTotals(),
-    eRepo.list(),
-  ]);
+  const [overview, series, attendance, payRuns, employeesRaw, pipeline] =
+    await Promise.all([
+      repo.overview(range),
+      repo.getPayrollSeries(range),
+      repo.getAttendance(range),
+      payRepo.listWithTotals(),
+      eRepo.list(),
+      repo.getPipeline(),
+    ]);
   const employees: EmployeeTableRow[] = employeesRaw.map((e) => ({
     id: e.id as string,
     firstName: e.firstName,
@@ -125,7 +127,7 @@ export default async function DashboardPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <RecruitmentOverview />
+        <RecruitmentOverview pipeline={pipeline} />
         <UpcomingEvents />
         <RecentActivity />
       </div>
