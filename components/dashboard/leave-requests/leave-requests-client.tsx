@@ -12,6 +12,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,18 +34,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { Leave } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type LeaveTypeKey = "vacation" | "sick" | "personal" | "other";
 type LeaveStatusKey = "pending" | "approved" | "rejected" | "cancelled";
-
-interface RawRow {
-  id: string;
-  employee: { name: string; email: string; avatar?: string };
-  type: LeaveTypeKey;
-  start: string;
-  end: string;
-  status: LeaveStatusKey;
-}
 
 interface LeaveRequestDisplay {
   id: string;
@@ -135,127 +129,43 @@ const avatarBg = (name: string) => {
   return palette[h % palette.length];
 };
 
-function buildMock(): LeaveRequestDisplay[] {
-  const raw: RawRow[] = [
-    {
-      id: "1",
-      employee: { name: "Sarah Wijaya", email: "sarah.w@saasdesk.com" },
-      type: "vacation",
-      start: "2026-10-12",
-      end: "2026-10-16",
-      status: "pending",
+function mapLeaveToDisplay(l: Leave): LeaveRequestDisplay {
+  // map backend LeaveType (vacation|sick|unpaid|other) to display (vacation|sick|personal|other)
+  const rawType = l.type as string;
+  const type: LeaveTypeKey =
+    rawType === "unpaid" ? "personal" : (rawType as LeaveTypeKey);
+  const d = calcDuration(l.startDate, l.endDate);
+  const shortId = String(l.employeeId).slice(-5);
+  return {
+    id: l.id as string,
+    employee: {
+      name: `Employee ${shortId}`,
+      email: `${String(l.employeeId).slice(0, 8)}@saasdesk.local`,
     },
-    {
-      id: "2",
-      employee: { name: "Andi Pratama", email: "andi.p@saasdesk.com" },
-      type: "sick",
-      start: "2026-10-14",
-      end: "2026-10-14",
-      status: "approved",
-    },
-    {
-      id: "3",
-      employee: { name: "Dewi Lestari", email: "dewi.lestari@saasdesk.com" },
-      type: "personal",
-      start: "2026-10-15",
-      end: "2026-10-19",
-      status: "rejected",
-    },
-    {
-      id: "4",
-      employee: { name: "Budi Santoso", email: "budi.s@saasdesk.com" },
-      type: "vacation",
-      start: "2026-10-20",
-      end: "2026-10-22",
-      status: "pending",
-    },
-    {
-      id: "5",
-      employee: { name: "Rina Marlina", email: "rina.m@saasdesk.com" },
-      type: "sick",
-      start: "2026-10-18",
-      end: "2026-10-18",
-      status: "pending",
-    },
-    {
-      id: "6",
-      employee: { name: "Agus Wijaya", email: "agus.w@saasdesk.com" },
-      type: "vacation",
-      start: "2026-10-25",
-      end: "2026-10-30",
-      status: "approved",
-    },
-    {
-      id: "7",
-      employee: { name: "Siti Nurhaliza", email: "siti.n@saasdesk.com" },
-      type: "personal",
-      start: "2026-11-01",
-      end: "2026-11-02",
-      status: "approved",
-    },
-    {
-      id: "8",
-      employee: { name: "Joko Widodo", email: "joko.w@saasdesk.com" },
-      type: "other",
-      start: "2026-10-10",
-      end: "2026-10-10",
-      status: "approved",
-    },
-    {
-      id: "9",
-      employee: { name: "Maya Sari", email: "maya.s@saasdesk.com" },
-      type: "vacation",
-      start: "2026-11-05",
-      end: "2026-11-09",
-      status: "pending",
-    },
-    {
-      id: "10",
-      employee: { name: "Eko Prasetyo", email: "eko.p@saasdesk.com" },
-      type: "sick",
-      start: "2026-10-05",
-      end: "2026-10-06",
-      status: "rejected",
-    },
-    {
-      id: "11",
-      employee: { name: "Lina Hartono", email: "lina.h@saasdesk.com" },
-      type: "personal",
-      start: "2026-10-28",
-      end: "2026-10-28",
-      status: "pending",
-    },
-    {
-      id: "12",
-      employee: { name: "Fajar Nugroho", email: "fajar.n@saasdesk.com" },
-      type: "vacation",
-      start: "2026-11-12",
-      end: "2026-11-15",
-      status: "approved",
-    },
-  ];
-  return raw.map((r) => {
-    const d = calcDuration(r.start, r.end);
-    return {
-      id: r.id,
-      employee: r.employee,
-      type: r.type,
-      typeLabel: TYPE_LABEL[r.type],
-      startDate: r.start,
-      endDate: r.end,
-      startLabel: formatDateLabel(r.start),
-      endLabel: formatDateLabel(r.end),
-      durationDays: d,
-      durationLabel: `${d} Day${d > 1 ? "s" : ""}`,
-      status: r.status,
-    };
-  });
+    type,
+    typeLabel: TYPE_LABEL[type] ?? type,
+    startDate: l.startDate,
+    endDate: l.endDate,
+    startLabel: formatDateLabel(l.startDate),
+    endLabel: formatDateLabel(l.endDate),
+    durationDays: d,
+    durationLabel: `${d} Day${d > 1 ? "s" : ""}`,
+    status: l.status as LeaveStatusKey,
+  };
 }
 
-export function LeaveRequestsClient() {
-  const [requests, setRequests] = useState<LeaveRequestDisplay[]>(() =>
-    buildMock(),
+export function LeaveRequestsClient({
+  initialLeaves,
+}: {
+  initialLeaves: Leave[];
+}) {
+  const router = useRouter();
+  const initialRequests = useMemo(
+    () => initialLeaves.map(mapLeaveToDisplay),
+    [initialLeaves],
   );
+  const [requests, setRequests] =
+    useState<LeaveRequestDisplay[]>(initialRequests);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -268,6 +178,8 @@ export function LeaveRequestsClient() {
   const [editRow, setEditRow] = useState<LeaveRequestDisplay | null>(null);
   const [confirmDelete, setConfirmDelete] =
     useState<LeaveRequestDisplay | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -277,13 +189,19 @@ export function LeaveRequestsClient() {
     end: "",
     reason: "",
   });
-
   const [editForm, setEditForm] = useState({
     type: "vacation" as LeaveTypeKey,
     start: "",
     end: "",
     status: "pending" as LeaveStatusKey,
   });
+
+  // sync when server refresh provides new leaves
+  useMemo(() => {
+    setRequests(initialRequests);
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRequests]);
 
   const filtered = useMemo(() => {
     return requests.filter((r) => {
@@ -320,10 +238,13 @@ export function LeaveRequestsClient() {
   }, [filtered, safePage, pageSize]);
 
   const stats = useMemo(() => {
-    const total = requests.length + 106;
-    const pending = requests.filter((r) => r.status === "pending").length + 19;
+    const total = requests.length + (requests.length === 0 ? 0 : 106);
+    const pending =
+      requests.filter((r) => r.status === "pending").length +
+      (requests.length === 0 ? 0 : 19);
     const approved =
-      requests.filter((r) => r.status === "approved").length + 89;
+      requests.filter((r) => r.status === "approved").length +
+      (requests.length === 0 ? 0 : 89);
     return { total, pending, approved };
   }, [requests]);
 
@@ -347,33 +268,49 @@ export function LeaveRequestsClient() {
     setSelected(next);
   }
 
-  function handleCreate() {
-    if (!form.name || !form.email || !form.start || !form.end) return;
-    const d = calcDuration(form.start, form.end);
-    const row: LeaveRequestDisplay = {
-      id: String(Date.now()),
-      employee: { name: form.name, email: form.email },
-      type: form.type,
-      typeLabel: TYPE_LABEL[form.type],
-      startDate: form.start,
-      endDate: form.end,
-      startLabel: formatDateLabel(form.start),
-      endLabel: formatDateLabel(form.end),
-      durationDays: d,
-      durationLabel: `${d} Day${d > 1 ? "s" : ""}`,
-      status: "pending",
-    };
-    setRequests((prev) => [row, ...prev]);
-    setNewOpen(false);
-    setForm({
-      name: "",
-      email: "",
-      type: "vacation",
-      start: "",
-      end: "",
-      reason: "",
-    });
-    setPage(1);
+  async function handleCreate() {
+    setError(null);
+    if (!form.name || !form.email || !form.start || !form.end) {
+      setError("Name, email, start and end dates are required.");
+      return;
+    }
+    // map personal -> unpaid for API
+    const apiType = form.type === "personal" ? "unpaid" : form.type;
+    const employeeId = `emp-${Date.now().toString(36)}`;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/leave.create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          employeeId,
+          type: apiType,
+          startDate: form.start,
+          endDate: form.end,
+          reason: form.reason || null,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Failed to create");
+      }
+      setNewOpen(false);
+      setForm({
+        name: "",
+        email: "",
+        type: "vacation",
+        start: "",
+        end: "",
+        reason: "",
+      });
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function openEdit(row: LeaveRequestDisplay) {
@@ -386,36 +323,101 @@ export function LeaveRequestsClient() {
     });
   }
 
-  function handleEditSave() {
-    if (!editRow) return;
-    const d = calcDuration(editForm.start, editForm.end);
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === editRow.id
-          ? {
-              ...r,
-              type: editForm.type,
-              typeLabel: TYPE_LABEL[editForm.type],
-              startDate: editForm.start,
-              endDate: editForm.end,
-              startLabel: formatDateLabel(editForm.start),
-              endLabel: formatDateLabel(editForm.end),
-              durationDays: d,
-              durationLabel: `${d} Day${d > 1 ? "s" : ""}`,
-              status: editForm.status,
-            }
-          : r,
-      ),
-    );
-    setEditRow(null);
+  async function handleApprove(id: string) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/leave.approve", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Approve failed");
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function handleDelete(row: LeaveRequestDisplay) {
-    setRequests((prev) => prev.filter((r) => r.id !== row.id));
-    setConfirmDelete(null);
-    const next = new Set(selected);
-    next.delete(row.id);
-    setSelected(next);
+  async function handleReject(id: string) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/leave.reject", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Reject failed");
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleCancel(id: string) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/leave.cancel", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Cancel failed");
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(row: LeaveRequestDisplay) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/leave.remove", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: row.id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Delete failed");
+      }
+      setRequests((prev) => prev.filter((r) => r.id !== row.id));
+      setConfirmDelete(null);
+      const next = new Set(selected);
+      next.delete(row.id);
+      setSelected(next);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
@@ -423,6 +425,14 @@ export function LeaveRequestsClient() {
 
   return (
     <div className="space-y-5">
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+      {submitting ? (
+        <div className="h-2 w-full animate-pulse rounded bg-muted" />
+      ) : null}
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[16px] border bg-white p-5 flex items-center gap-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eef2ff] text-[#4f46e5]">
@@ -575,6 +585,13 @@ export function LeaveRequestsClient() {
               </tr>
             </thead>
             <tbody>
+              {submitting ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-3">
+                    <div className="animate-pulse h-4 bg-muted rounded" />
+                  </td>
+                </tr>
+              ) : null}
               {paged.length === 0 ? (
                 <tr>
                   <td
@@ -634,7 +651,10 @@ export function LeaveRequestsClient() {
                     </td>
                     <td className="px-3 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_STYLE[r.status]}`}
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
+                          STATUS_STYLE[r.status],
+                        )}
                       >
                         {r.status}
                       </span>
@@ -706,11 +726,12 @@ export function LeaveRequestsClient() {
                     key={n}
                     type="button"
                     onClick={() => setPage(n)}
-                    className={`flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-xs font-medium ${
+                    className={cn(
+                      "flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-xs font-medium",
                       active
                         ? "bg-[#1a1a2e] text-white border-[#1a1a2e]"
-                        : "bg-white hover:bg-muted"
-                    }`}
+                        : "bg-white hover:bg-muted",
+                    )}
                   >
                     {n}
                   </button>
@@ -828,6 +849,7 @@ export function LeaveRequestsClient() {
                 />
               </div>
             </div>
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewOpen(false)}>
@@ -835,9 +857,10 @@ export function LeaveRequestsClient() {
             </Button>
             <Button
               onClick={handleCreate}
+              disabled={submitting}
               className="bg-[#1e3a5f] text-white hover:bg-[#162a44]"
             >
-              Create Request
+              {submitting ? "Creating..." : "Create Request"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -866,7 +889,10 @@ export function LeaveRequestsClient() {
                   </p>
                 </div>
                 <span
-                  className={`ml-auto inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_STYLE[viewRow.status]}`}
+                  className={cn(
+                    "ml-auto inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
+                    STATUS_STYLE[viewRow.status],
+                  )}
                 >
                   {viewRow.status}
                 </span>
@@ -889,6 +915,37 @@ export function LeaveRequestsClient() {
                   <p className="font-medium">{viewRow.endLabel}</p>
                 </div>
               </div>
+              <div className="flex gap-2 pt-2">
+                {viewRow.status === "pending" ? (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => handleApprove(viewRow.id)}
+                      disabled={submitting}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleReject(viewRow.id)}
+                      disabled={submitting}
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleCancel(viewRow.id)}
+                      disabled={submitting}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : null}
+              </div>
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
             </div>
           )}
           <DialogFooter>
@@ -976,6 +1033,7 @@ export function LeaveRequestsClient() {
                   />
                 </div>
               </div>
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
             </div>
           )}
           <DialogFooter>
@@ -983,10 +1041,24 @@ export function LeaveRequestsClient() {
               Cancel
             </Button>
             <Button
-              onClick={handleEditSave}
+              disabled={submitting}
+              onClick={async () => {
+                if (!editRow) return;
+                // edit maps to status change via approve/reject/cancel
+                if (editForm.status === "approved")
+                  await handleApprove(editRow.id);
+                else if (editForm.status === "rejected")
+                  await handleReject(editRow.id);
+                else if (editForm.status === "cancelled")
+                  await handleCancel(editRow.id);
+                else {
+                  // pending no-op
+                  setEditRow(null);
+                }
+              }}
               className="bg-[#1e3a5f] text-white hover:bg-[#162a44]"
             >
-              Save Changes
+              {submitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1014,9 +1086,10 @@ export function LeaveRequestsClient() {
             </Button>
             <Button
               variant="destructive"
+              disabled={submitting}
               onClick={() => confirmDelete && handleDelete(confirmDelete)}
             >
-              Delete
+              {submitting ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

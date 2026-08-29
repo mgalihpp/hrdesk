@@ -16,6 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,11 +39,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+export type PayslipStatus = "Paid" | "Pending" | "Generated";
+export type PayslipType = "Monthly" | "Bonus" | "Off-cycle";
 
-type PayslipStatus = "Paid" | "Pending" | "Generated";
-type PayslipType = "Monthly" | "Bonus" | "Off-cycle";
-
-interface PayslipRecord {
+export interface PayslipRecord {
   id: string;
   employee: { name: string; email: string; avatar: string };
   employeeId: string;
@@ -59,164 +59,6 @@ const STATUS_STYLE: Record<PayslipStatus, string> = {
   Generated: "border-[#fde68a] bg-[#fef3c7] text-[#a16207]",
 };
 
-const PAYSLIPS_MOCK: PayslipRecord[] = [
-  {
-    id: "1",
-    employee: {
-      name: "Sarah Wijaya",
-      email: "sarah.w@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP001",
-    department: "Marketing",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 15000,
-    status: "Pending",
-    type: "Monthly",
-  },
-  {
-    id: "2",
-    employee: {
-      name: "Andi Pratama",
-      email: "andi.pratama@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP002",
-    department: "Engineering",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 12000,
-    status: "Paid",
-    type: "Monthly",
-  },
-  {
-    id: "3",
-    employee: {
-      name: "Dewi Lestari",
-      email: "dewi.lestari@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP003",
-    department: "HR",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 10000,
-    status: "Generated",
-    type: "Monthly",
-  },
-  {
-    id: "4",
-    employee: {
-      name: "Budi Santoso",
-      email: "budi.s@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP004",
-    department: "Finance",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 18500,
-    status: "Paid",
-    type: "Bonus",
-  },
-  {
-    id: "5",
-    employee: {
-      name: "Citra Kirana",
-      email: "citra.k@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP005",
-    department: "Product",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 14200,
-    status: "Generated",
-    type: "Monthly",
-  },
-  {
-    id: "6",
-    employee: { name: "Eko Nugroho", email: "eko.n@saasdesk.com", avatar: "" },
-    employeeId: "EMP006",
-    department: "Engineering",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 16800,
-    status: "Pending",
-    type: "Off-cycle",
-  },
-  {
-    id: "7",
-    employee: {
-      name: "Fajar Hidayat",
-      email: "fajar.h@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP007",
-    department: "Sales",
-    lastPayrunDate: "30 Aug 2026",
-    totalNetPay: 11000,
-    status: "Paid",
-    type: "Monthly",
-  },
-  {
-    id: "8",
-    employee: {
-      name: "Gita Permata",
-      email: "gita.p@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP008",
-    department: "Design",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 13500,
-    status: "Generated",
-    type: "Monthly",
-  },
-  {
-    id: "9",
-    employee: {
-      name: "Hendra Wijaya",
-      email: "hendra.w@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP009",
-    department: "Operations",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 9800,
-    status: "Paid",
-    type: "Monthly",
-  },
-  {
-    id: "10",
-    employee: { name: "Intan Sari", email: "intan.s@saasdesk.com", avatar: "" },
-    employeeId: "EMP010",
-    department: "Customer Support",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 8900,
-    status: "Pending",
-    type: "Bonus",
-  },
-  {
-    id: "11",
-    employee: { name: "Joko Anwar", email: "joko.a@saasdesk.com", avatar: "" },
-    employeeId: "EMP011",
-    department: "Engineering",
-    lastPayrunDate: "30 Sep 2026",
-    totalNetPay: 21000,
-    status: "Paid",
-    type: "Monthly",
-  },
-  {
-    id: "12",
-    employee: {
-      name: "Kartika Dewi",
-      email: "kartika.d@saasdesk.com",
-      avatar: "",
-    },
-    employeeId: "EMP012",
-    department: "Legal",
-    lastPayrunDate: "30 Aug 2026",
-    totalNetPay: 16200,
-    status: "Generated",
-    type: "Monthly",
-  },
-];
 function formatMoney(n: number): string {
   return `$${n.toLocaleString("en-US")}`;
 }
@@ -243,8 +85,15 @@ function avatarBg(name: string): string {
   return colors[h % colors.length] ?? "bg-[#f3e8ff]";
 }
 
-export function PayslipsClient() {
-  const [records, setRecords] = useState<PayslipRecord[]>(PAYSLIPS_MOCK);
+export function PayslipsClient({
+  initialPayslips,
+}: {
+  initialPayslips: PayslipRecord[];
+}) {
+  const router = useRouter();
+  const [records, setRecords] = useState<PayslipRecord[]>(initialPayslips);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -359,48 +208,102 @@ export function PayslipsClient() {
     });
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    setError(null);
+    setSubmitting(true);
     setRecords((prev) => prev.filter((r) => r.id !== id));
     setSelected((prev) => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
+    try {
+      const res = await fetch("/api/trpc/payrun.remove", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.status !== 404 && !res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN")) {
+          setError("You do not have permission to delete payslips.");
+        } else if (text) {
+          setError(text);
+        }
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function handleGenerate(e: React.FormEvent) {
+  async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim()) return;
-    const netPay = Number(form.netPay.replace(/[^0-9]/g, "")) || 0;
-    const newRecord: PayslipRecord = {
-      id: `ps-${Date.now()}`,
-      employee: {
-        name: form.name.trim(),
-        email: form.email.trim(),
-        avatar: "",
-      },
-      employeeId:
-        form.employeeId.trim() ||
-        `EMP${String(records.length + 1).padStart(3, "0")}`,
-      department: form.department,
-      lastPayrunDate: form.date,
-      totalNetPay: netPay,
-      status: form.status,
-      type: form.type,
-    };
-    setRecords((prev) => [newRecord, ...prev]);
-    setGenerateOpen(false);
-    setForm({
-      name: "",
-      email: "",
-      employeeId: "",
-      department: "Engineering",
-      netPay: "12000",
-      status: "Pending",
-      type: "Monthly",
-      date: "30 Sep 2026",
-    });
-    setPage(1);
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/payrun.create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          periodStart: "2026-10-01",
+          periodEnd: "2026-10-31",
+          entityId: "default",
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN")) {
+          throw new Error("You do not have permission to generate payslips.");
+        }
+        if (
+          text.includes("idempotency") ||
+          text.includes("duplicate") ||
+          text.includes("already exists")
+        ) {
+          throw new Error("Pay run already exists for this period.");
+        }
+        throw new Error(text || "Failed to generate payslip");
+      }
+      const netPay = Number(form.netPay.replace(/[^0-9]/g, "")) || 0;
+      const newRecord: PayslipRecord = {
+        id: `ps-${Date.now()}`,
+        employee: {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          avatar: "",
+        },
+        employeeId:
+          form.employeeId.trim() ||
+          `EMP${String(records.length + 1).padStart(3, "0")}`,
+        department: form.department,
+        lastPayrunDate: form.date,
+        totalNetPay: netPay,
+        status: form.status,
+        type: form.type,
+      };
+      setRecords((prev) => [newRecord, ...prev]);
+      setGenerateOpen(false);
+      setForm({
+        name: "",
+        email: "",
+        employeeId: "",
+        department: "Engineering",
+        netPay: "12000",
+        status: "Pending",
+        type: "Monthly",
+        date: "30 Sep 2026",
+      });
+      setPage(1);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function openEdit(r: PayslipRecord) {
@@ -417,9 +320,11 @@ export function PayslipsClient() {
     });
   }
 
-  function handleEdit(e: React.FormEvent) {
+  async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editRecord) return;
+    setError(null);
+    setSubmitting(true);
     const netPay = Number(editForm.netPay.replace(/[^0-9]/g, "")) || 0;
     setRecords((prev) =>
       prev.map((r) =>
@@ -441,7 +346,28 @@ export function PayslipsClient() {
           : r,
       ),
     );
+    const editingId = editRecord.id;
     setEditRecord(null);
+    try {
+      const res = await fetch("/api/trpc/payrun.lock", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: editingId }),
+      });
+      if (res.status !== 404 && !res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN")) {
+          setError("You do not have permission to edit payslips.");
+        } else if (text) {
+          setError(text);
+        }
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function handlePrintPayslip() {
@@ -650,6 +576,14 @@ export function PayslipsClient() {
           </div>
         </div>
       </Card>
+      {error ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {error}
+        </div>
+      ) : null}
 
       <Card className="overflow-hidden rounded-[16px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
         <div className="overflow-x-auto">
@@ -694,7 +628,13 @@ export function PayslipsClient() {
               </tr>
             </thead>
             <tbody>
-              {pageRows.length === 0 ? (
+              {submitting ? (
+                <tr>
+                  <td colSpan={8} className="px-3 py-3">
+                    <div className="animate-pulse h-4 rounded bg-muted" />
+                  </td>
+                </tr>
+              ) : pageRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={8}

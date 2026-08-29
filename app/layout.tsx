@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import "./fonts.css";
+import { TRPCProvider } from "@/lib/trpc/provider";
 import { cn } from "@/lib/utils";
 
 const generalSans = localFont({
@@ -27,7 +28,9 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", generalSans.variable, "font-sans")}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <TRPCProvider>{children}</TRPCProvider>
+      </body>
     </html>
   );
 }

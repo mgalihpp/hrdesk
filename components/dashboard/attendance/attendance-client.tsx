@@ -15,6 +15,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -52,13 +53,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ATTENDANCE_MOCK } from "@/lib/attendance/mock";
 import type {
   AttendanceRecord,
   AttendanceStatus,
   DateRangePreset,
   Department,
 } from "@/lib/attendance/types";
+import type { TimeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLE: Record<AttendanceStatus, string> = {
@@ -123,10 +124,7 @@ const STAT_CARDS = [
   },
 ] as const;
 
-type ColumnDef = {
-  key: string;
-  label: string;
-};
+type ColumnDef = { key: string; label: string };
 
 const COLUMNS: ColumnDef[] = [
   { key: "check", label: "" },
@@ -243,8 +241,58 @@ function formatTime(t: string | null): string {
   return `${String(hour12).padStart(2, "0")}:${m} ${ampm}`;
 }
 
-export function AttendanceClient() {
-  const [records, setRecords] = useState<AttendanceRecord[]>(ATTENDANCE_MOCK);
+function timeEntryToRecord(e: TimeEntry): AttendanceRecord {
+  const start = new Date(e.startAt);
+  const end = new Date(e.endAt);
+  const date = Number.isNaN(start.getTime())
+    ? e.startAt.slice(0, 10)
+    : start.toISOString().slice(0, 10);
+  const clockIn = Number.isNaN(start.getTime())
+    ? null
+    : `${String(start.getUTCHours()).padStart(2, "0")}:${String(start.getUTCMinutes()).padStart(2, "0")}`;
+  const clockOut = Number.isNaN(end.getTime())
+    ? null
+    : `${String(end.getUTCHours()).padStart(2, "0")}:${String(end.getUTCMinutes()).padStart(2, "0")}`;
+  // map TimeEntryStatus to AttendanceStatus
+  let status: AttendanceStatus = "Active";
+  if (e.status === "rejected") status = "On Leave";
+  else if (e.status === "pending") status = "Active";
+  else status = "Active";
+  // late heuristic: if clockIn after 09:00
+  if (clockIn) {
+    const [h] = clockIn.split(":").map(Number);
+    if ((h ?? 0) >= 9 && status === "Active") {
+      // keep Active; UI will show Late only if explicitly mapped
+    }
+  }
+  const shortId = String(e.employeeId).slice(-6);
+  return {
+    id: e.id as string,
+    employee: {
+      id: e.employeeId as string,
+      name: `Employee ${shortId}`,
+      email: `${String(e.employeeId).slice(0, 8)}@saasdesk.local`,
+      avatar: "",
+      department: "Engineering" as Department,
+    },
+    date,
+    clockIn,
+    clockOut,
+    status,
+  };
+}
+
+export function AttendanceClient({
+  initialEntries,
+}: {
+  initialEntries: TimeEntry[];
+}) {
+  const router = useRouter();
+  const initialRecords = useMemo(
+    () => initialEntries.map(timeEntryToRecord),
+    [initialEntries],
+  );
+  const [records, setRecords] = useState<AttendanceRecord[]>(initialRecords);
   const [q, setQ] = useState("");
   const [department, setDepartment] = useState("all");
   const [dateRange, setDateRange] = useState<DateRangePreset>("Last 7 Days");
@@ -254,6 +302,8 @@ export function AttendanceClient() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [logOpen, setLogOpen] = useState(false);
   const [viewRecord, setViewRecord] = useState<AttendanceRecord | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -263,6 +313,13 @@ export function AttendanceClient() {
     clockOut: "",
     status: "Active" as AttendanceStatus,
   });
+
+  // keep local records in sync when server refreshes (initialEntries changes)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const _sync = useMemo(() => {
+    setRecords(initialRecords);
+    return null;
+  }, [initialRecords]);
 
   const filtered = useMemo(
     () =>
@@ -360,42 +417,114 @@ export function AttendanceClient() {
     URL.revokeObjectURL(url);
   }
 
-  function handleLog(e: React.FormEvent) {
+  async function handleLog(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim() || !form.email.trim()) return;
+    setError(null);
+    if (!form.name.trim() || !form.email.trim()) {
+      setError("Name and email are required.");
+      return;
+    }
     const isoDate = form.date
       ? form.date
       : new Date().toISOString().slice(0, 10);
-    const newRecord: AttendanceRecord = {
-      id: `att-${Date.now()}`,
-      employee: {
-        id: `emp-${Date.now()}`,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        avatar: "",
-        department: form.department,
-      },
-      date: isoDate,
-      clockIn: form.status === "On Leave" ? null : form.clockIn || null,
-      clockOut: form.status === "On Leave" ? null : form.clockOut || null,
-      status: form.status,
-    };
-    setRecords((prev) => [newRecord, ...prev]);
-    setLogOpen(false);
-    setForm({
-      name: "",
-      email: "",
-      department: "Engineering",
-      date: "",
-      clockIn: "",
-      clockOut: "",
-      status: "Active",
-    });
-    setPage(1);
+    const clockIn = form.clockIn || "09:00";
+    const clockOut = form.clockOut || "17:00";
+    const startAt = new Date(`${isoDate}T${clockIn}:00.000Z`).toISOString();
+    const endAt = new Date(`${isoDate}T${clockOut}:00.000Z`).toISOString();
+    if (new Date(startAt) >= new Date(endAt)) {
+      setError("Clock in must be before clock out.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Use a synthetic employeeId derived from email if needed; backend expects any string
+      const employeeId = `emp-${Date.now().toString(36)}`;
+      const res = await fetch("/api/trpc/timeEntry.create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ employeeId, type: "manual", startAt, endAt }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Failed to log attendance");
+      }
+      setLogOpen(false);
+      setForm({
+        name: "",
+        email: "",
+        department: "Engineering",
+        date: "",
+        clockIn: "",
+        clockOut: "",
+        status: "Active",
+      });
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/timeEntry.remove", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Delete failed");
+      }
+      setRecords((prev) => prev.filter((x) => x.id !== id));
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleApprove(id: string) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/timeEntry.approve", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Approve failed");
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <div className="space-y-4">
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+      {submitting ? (
+        <div className="h-2 w-full animate-pulse rounded bg-muted" />
+      ) : null}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {STAT_CARDS.map((c) => (
           <Card
@@ -573,6 +702,13 @@ export function AttendanceClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {submitting ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <div className="animate-pulse h-4 bg-muted rounded" />
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {pageRows.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -667,17 +803,14 @@ export function AttendanceClient() {
                               <Eye className="mr-2 size-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setViewRecord(r)}>
-                              <Pencil className="mr-2 size-4" />
-                              Edit
+                            <DropdownMenuItem
+                              onClick={() => handleApprove(r.id)}
+                            >
+                              Approve
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() =>
-                                setRecords((prev) =>
-                                  prev.filter((x) => x.id !== r.id),
-                                )
-                              }
+                              onClick={() => handleDelete(r.id)}
                             >
                               <Trash2 className="mr-2 size-4" />
                               Delete
@@ -872,6 +1005,7 @@ export function AttendanceClient() {
                 />
               </div>
             </div>
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
             <DialogFooter>
               <Button
                 type="button"
@@ -880,8 +1014,12 @@ export function AttendanceClient() {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#2563eb] hover:bg-[#1d4ed8]">
-                Log Attendance
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="bg-[#2563eb] hover:bg-[#1d4ed8]"
+              >
+                {submitting ? "Saving..." : "Log Attendance"}
               </Button>
             </DialogFooter>
           </form>

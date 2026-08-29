@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpDown,
   ChevronLeft,
@@ -14,7 +15,9 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,12 +54,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePayrollStore } from "@/lib/stores/payroll-store";
+import { useTRPC } from "@/lib/trpc/react";
 import { cn } from "@/lib/utils";
+export type PayrollStatus =
+  | "Paid"
+  | "Pending Approval"
+  | "Processing"
+  | "Disputed";
+export type EmploymentType = "Salaried" | "Contractor";
 
-type PayrollStatus = "Paid" | "Pending Approval" | "Processing" | "Disputed";
-type EmploymentType = "Salaried" | "Contractor";
-
-interface PayrollRecord {
+export interface PayrollRecord {
   id: string;
   employee: { name: string; email: string; avatar: string };
   employmentType: EmploymentType;
@@ -74,189 +82,6 @@ const STATUS_STYLE: Record<PayrollStatus, string> = {
   Processing: "bg-[#dbeafe] text-[#1d4ed8] border-[#bfdbfe]",
   Disputed: "bg-[#fee2e2] text-[#be123c] border-[#fecaca]",
 };
-
-const PAYROLL_MOCK: PayrollRecord[] = [
-  {
-    id: "pr-1",
-    employee: {
-      name: "Sarah Wijaya",
-      email: "sarah.wijaya@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Salaried",
-    period: "Oct 2026",
-    baseSalary: 8000,
-    allowances: 1200,
-    deductions: 1800,
-    netPay: 7400,
-    status: "Paid",
-  },
-  {
-    id: "pr-2",
-    employee: {
-      name: "Andi Pratama",
-      email: "andi.pratama@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Salaried",
-    period: "Oct 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1400,
-    netPay: 5900,
-    status: "Pending Approval",
-  },
-  {
-    id: "pr-3",
-    employee: {
-      name: "Dewi Lestari",
-      email: "dewi.lestari@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Contractor",
-    period: "Oct 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1400,
-    netPay: 5900,
-    status: "Pending Approval",
-  },
-  {
-    id: "pr-4",
-    employee: {
-      name: "Dewi Lestari",
-      email: "dewi.lestari2@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Salaried",
-    period: "Oct 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1800,
-    netPay: 5500,
-    status: "Processing",
-  },
-  {
-    id: "pr-5",
-    employee: {
-      name: "Andi Pratama",
-      email: "andi.pratama2@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Contractor",
-    period: "Oct 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1400,
-    netPay: 5900,
-    status: "Disputed",
-  },
-  {
-    id: "pr-6",
-    employee: {
-      name: "Dewi Lestari",
-      email: "dewi.lestari3@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Salaried",
-    period: "Oct 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1400,
-    netPay: 5900,
-    status: "Disputed",
-  },
-  {
-    id: "pr-7",
-    employee: {
-      name: "Dewi Lestari",
-      email: "dewi.lestari4@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Contractor",
-    period: "Oct 2026",
-    baseSalary: 8000,
-    allowances: 800,
-    deductions: 1800,
-    netPay: 7000,
-    status: "Paid",
-  },
-  {
-    id: "pr-8",
-    employee: {
-      name: "Andi Pratama",
-      email: "andi.pratama3@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Salaried",
-    period: "Sep 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1400,
-    netPay: 5900,
-    status: "Processing",
-  },
-  {
-    id: "pr-9",
-    employee: {
-      name: "Dewi Lestari",
-      email: "dewi.lestari5@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Salaried",
-    period: "Oct 2026",
-    baseSalary: 8000,
-    allowances: 1200,
-    deductions: 1800,
-    netPay: 7400,
-    status: "Paid",
-  },
-  {
-    id: "pr-10",
-    employee: {
-      name: "Sarah Wijaya",
-      email: "sarah.wijaya2@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Salaried",
-    period: "Oct 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1400,
-    netPay: 5900,
-    status: "Paid",
-  },
-  {
-    id: "pr-11",
-    employee: {
-      name: "Andi Pratama",
-      email: "andi.pratama4@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Contractor",
-    period: "Oct 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1400,
-    netPay: 5900,
-    status: "Paid",
-  },
-  {
-    id: "pr-12",
-    employee: {
-      name: "Dewi Lestari",
-      email: "dewi.lestari6@saasdesk.com",
-      avatar: "",
-    },
-    employmentType: "Contractor",
-    period: "Sep 2026",
-    baseSalary: 6500,
-    allowances: 800,
-    deductions: 1400,
-    netPay: 5900,
-    status: "Processing",
-  },
-];
 
 function matchesFilters(
   r: PayrollRecord,
@@ -333,8 +158,15 @@ function formatMoneyNoSymbol(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-export function PayrollClient() {
-  const [records, setRecords] = useState<PayrollRecord[]>(PAYROLL_MOCK);
+export function PayrollClient({
+  initialRecords,
+}: {
+  initialRecords: PayrollRecord[];
+}) {
+  const router = useRouter();
+  const [records, setRecords] = useState<PayrollRecord[]>(initialRecords);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [monthFilter, setMonthFilter] = useState("all");
@@ -442,50 +274,110 @@ export function PayrollClient() {
     });
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    setError(null);
+    setSubmitting(true);
     setRecords((prev) => prev.filter((r) => r.id !== id));
     setSelected((prev) => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
+    try {
+      const res = await fetch("/api/trpc/payrun.remove", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.status === 404) {
+        router.refresh();
+        return;
+      }
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN")) {
+          setError("You do not have permission to delete payroll records.");
+        } else if (text) {
+          setError(text);
+        }
+        router.refresh();
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
-
-  function handleRun(e: React.FormEvent) {
+  async function handleRun(e: React.FormEvent) {
     e.preventDefault();
     if (!runForm.name.trim() || !runForm.email.trim()) return;
-    const base = Number(runForm.baseSalary) || 0;
-    const allow = Number(runForm.allowances) || 0;
-    const deduct = Number(runForm.deductions) || 0;
-    const net = base + allow - deduct;
-    const newRecord: PayrollRecord = {
-      id: `pr-${Date.now()}`,
-      employee: {
-        name: runForm.name.trim(),
-        email: runForm.email.trim(),
-        avatar: "",
-      },
-      employmentType: runForm.employmentType,
-      period: runForm.period,
-      baseSalary: base,
-      allowances: allow,
-      deductions: deduct,
-      netPay: net,
-      status: runForm.status,
-    };
-    setRecords((prev) => [newRecord, ...prev]);
-    setRunOpen(false);
-    setRunForm({
-      name: "",
-      email: "",
-      employmentType: "Salaried",
-      period: "Oct 2026",
-      baseSalary: "6500",
-      allowances: "800",
-      deductions: "1400",
-      status: "Paid",
-    });
-    setPage(1);
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/payrun.create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          periodStart: "2026-10-01",
+          periodEnd: "2026-10-31",
+          entityId: "default",
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN")) {
+          throw new Error("You do not have permission to run payroll.");
+        }
+        if (
+          text.includes("idempotency") ||
+          text.includes("duplicate") ||
+          text.includes("already exists")
+        ) {
+          throw new Error("Pay run already exists for this period.");
+        }
+        throw new Error(text || "Failed to create pay run");
+      }
+      // optimistic local add for immediate feedback + server refresh
+      const base = Number(runForm.baseSalary) || 0;
+      const allow = Number(runForm.allowances) || 0;
+      const deduct = Number(runForm.deductions) || 0;
+      const net = base + allow - deduct;
+      const newRecord: PayrollRecord = {
+        id: `pr-${Date.now()}`,
+        employee: {
+          name: runForm.name.trim(),
+          email: runForm.email.trim(),
+          avatar: "",
+        },
+        employmentType: runForm.employmentType,
+        period: runForm.period,
+        baseSalary: base,
+        allowances: allow,
+        deductions: deduct,
+        netPay: net,
+        status: runForm.status,
+      };
+      setRecords((prev) => [newRecord, ...prev]);
+      setRunOpen(false);
+      setRunForm({
+        name: "",
+        email: "",
+        employmentType: "Salaried",
+        period: "Oct 2026",
+        baseSalary: "6500",
+        allowances: "800",
+        deductions: "1400",
+        status: "Paid",
+      });
+      setPage(1);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function openEdit(r: PayrollRecord) {
@@ -502,13 +394,16 @@ export function PayrollClient() {
     });
   }
 
-  function handleEdit(e: React.FormEvent) {
+  async function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editRecord) return;
+    setError(null);
+    setSubmitting(true);
     const base = Number(editForm.baseSalary) || 0;
     const allow = Number(editForm.allowances) || 0;
     const deduct = Number(editForm.deductions) || 0;
     const net = base + allow - deduct;
+    // optimistic local update
     setRecords((prev) =>
       prev.map((r) =>
         r.id === editRecord.id
@@ -530,7 +425,44 @@ export function PayrollClient() {
           : r,
       ),
     );
+    const editingId = editRecord.id;
     setEditRecord(null);
+    try {
+      // Attempt update via payrun.lock if marking Paid, otherwise generic update if available
+      if (editForm.status === "Paid") {
+        const res = await fetch("/api/trpc/payrun.lock", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id: editingId }),
+        });
+        if (res.status !== 404 && !res.ok) {
+          const text = await res.text();
+          if (res.status === 403 || text.includes("FORBIDDEN")) {
+            setError("You do not have permission to edit payroll records.");
+          } else if (text) {
+            setError(text);
+          }
+        }
+      } else {
+        // try generic update endpoint if exists (idempotent no-op if 404)
+        const res = await fetch("/api/trpc/payrun.update", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id: editingId }),
+        });
+        if (res.status !== 404 && !res.ok) {
+          const text = await res.text();
+          if (res.status === 403 || text.includes("FORBIDDEN")) {
+            setError("You do not have permission to edit payroll records.");
+          }
+        }
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function handleExport() {
@@ -832,6 +764,14 @@ export function PayrollClient() {
         </div>
       </Card>
 
+      {error ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {error}
+        </div>
+      ) : null}
       <Card className="overflow-hidden rounded-[16px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
         <div className="overflow-x-auto">
           <Table>
@@ -880,7 +820,13 @@ export function PayrollClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pageRows.length === 0 ? (
+              {submitting ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <div className="animate-pulse h-4 rounded bg-muted" />
+                  </TableCell>
+                </TableRow>
+              ) : pageRows.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={8}

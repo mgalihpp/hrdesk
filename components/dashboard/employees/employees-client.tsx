@@ -14,6 +14,7 @@ import {
   Users,
   UserX,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +52,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EMPLOYEES_MOCK } from "@/lib/employees/mock";
 import type {
   Department,
   EmployeeDisplay,
@@ -205,8 +205,13 @@ function avatarBg(name: string): string {
   return colors[h % colors.length] ?? "bg-[#f4d4eb]";
 }
 
-export function EmployeesClient() {
-  const [employees, setEmployees] = useState<EmployeeDisplay[]>(EMPLOYEES_MOCK);
+export function EmployeesClient({
+  initialEmployees,
+}: {
+  initialEmployees: EmployeeDisplay[];
+}) {
+  const router = useRouter();
+  const [employees] = useState<EmployeeDisplay[]>(initialEmployees);
   const [q, setQ] = useState("");
   const [department, setDepartment] = useState("all");
   const [status, setStatus] = useState("all");
@@ -218,6 +223,13 @@ export function EmployeesClient() {
   const [viewEmployee, setViewEmployee] = useState<EmployeeDisplay | null>(
     null,
   );
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    department: "Engineering" as Department,
+    position: "",
+    status: "Active" as EmployeeStatusLabel,
+    employmentType: "Full Time" as EmploymentType,
+  });
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -226,7 +238,10 @@ export function EmployeesClient() {
     status: "Active" as EmployeeStatusLabel,
     employmentType: "Full Time" as EmploymentType,
     joinedDate: "",
+    compensation: "",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -310,48 +325,162 @@ export function EmployeesClient() {
     URL.revokeObjectURL(url);
   }
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim()) return;
-    const joined = form.joinedDate
-      ? (() => {
-          const d = new Date(form.joinedDate);
-          const day = String(d.getDate()).padStart(2, "0");
-          const month = d.toLocaleString("en-GB", { month: "short" });
-          const year = d.getFullYear();
-          return `${day} ${month} ${year}`;
-        })()
-      : new Date()
-          .toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-          .replace(/ /g, " ");
-    const newEmp: EmployeeDisplay = {
-      id: `emp-${Date.now()}`,
-      name: form.name.trim(),
-      email: form.email.trim(),
-      avatarUrl: "",
-      initials: getInitials(form.name.trim()),
-      department: form.department,
-      position: form.position.trim() || "New Hire",
-      status: form.status,
-      employmentType: form.employmentType,
-      joinedDate: joined,
-    };
-    setEmployees((prev) => [newEmp, ...prev]);
-    setAddOpen(false);
-    setForm({
-      name: "",
-      email: "",
-      department: "Engineering",
-      position: "",
-      status: "Active",
-      employmentType: "Full Time",
-      joinedDate: "",
+    setError(null);
+    setSubmitting(true);
+    try {
+      const nameTrimmed = form.name.trim();
+      const parts = nameTrimmed.split(/\s+/);
+      const firstName = parts[0] ?? nameTrimmed;
+      const lastName = parts.slice(1).join(" ").trim() || "-";
+      const compensation = Math.round(Number(form.compensation || "0") * 100);
+      const hireDate = form.joinedDate || new Date().toISOString().slice(0, 10);
+      const statusValue = form.status === "Active" ? "active" : "on_leave";
+      const res = await fetch("/api/trpc/employee.create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email: form.email.trim(),
+          ssn: "000-00-0000",
+          bank: "00000000",
+          compensation,
+          hireDate,
+          status: statusValue,
+          department: form.department,
+          position: form.position.trim() || "Employee",
+          employmentType: form.employmentType,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN")) {
+          setError("You do not have permission.");
+        } else {
+          setError(text || "Failed to create employee.");
+        }
+        return;
+      }
+      setAddOpen(false);
+      setForm({
+        name: "",
+        email: "",
+        department: "Engineering",
+        position: "",
+        status: "Active",
+        employmentType: "Full Time",
+        joinedDate: "",
+        compensation: "",
+      });
+      setPage(1);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/employee.remove", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN")) {
+          setError("You do not have permission.");
+        } else {
+          setError(text || "Failed to delete employee.");
+        }
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleUpdate() {
+    if (!viewEmployee) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const patch: Record<string, unknown> = {};
+      if (editForm.department !== viewEmployee.department) {
+        patch.department = editForm.department;
+      }
+      if (editForm.position !== viewEmployee.position) {
+        patch.position = editForm.position;
+      }
+      const mappedStatus = editForm.status === "Active" ? "active" : "on_leave";
+      const currentMapped =
+        viewEmployee.status === "Active" ? "active" : "on_leave";
+      if (mappedStatus !== currentMapped) {
+        patch.status = mappedStatus;
+      }
+      if (editForm.employmentType !== viewEmployee.employmentType) {
+        patch.employmentType = editForm.employmentType;
+      }
+      if (Object.keys(patch).length === 0) {
+        setIsEditing(false);
+        return;
+      }
+      const res = await fetch("/api/trpc/employee.update", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: viewEmployee.id, patch }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN")) {
+          setError("You do not have permission.");
+        } else {
+          setError(text || "Failed to update employee.");
+        }
+        return;
+      }
+      setIsEditing(false);
+      setViewEmployee(null);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function openView(emp: EmployeeDisplay) {
+    setViewEmployee(emp);
+    setIsEditing(false);
+    setEditForm({
+      department: emp.department,
+      position: emp.position,
+      status: emp.status,
+      employmentType: emp.employmentType,
     });
-    setPage(1);
+    setError(null);
+  }
+
+  function openEdit(emp: EmployeeDisplay) {
+    setViewEmployee(emp);
+    setIsEditing(true);
+    setEditForm({
+      department: emp.department,
+      position: emp.position,
+      status: emp.status,
+      employmentType: emp.employmentType,
+    });
+    setError(null);
   }
 
   return (
@@ -476,6 +605,12 @@ export function EmployeesClient() {
         </div>
       </Card>
 
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+
       <Card className="overflow-hidden rounded-[16px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
         <div className="overflow-x-auto">
           <Table>
@@ -499,6 +634,13 @@ export function EmployeesClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {submitting ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <div className="animate-pulse h-4 bg-muted rounded" />
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {pageRows.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -563,7 +705,7 @@ export function EmployeesClient() {
                           variant="ghost"
                           size="icon-sm"
                           className="size-7"
-                          onClick={() => setViewEmployee(emp)}
+                          onClick={() => openView(emp)}
                           aria-label={`View ${emp.name}`}
                         >
                           <Eye className="size-4" />
@@ -580,23 +722,15 @@ export function EmployeesClient() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => setViewEmployee(emp)}
-                            >
+                            <DropdownMenuItem onClick={() => openView(emp)}>
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setViewEmployee(emp)}
-                            >
+                            <DropdownMenuItem onClick={() => openEdit(emp)}>
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() =>
-                                setEmployees((prev) =>
-                                  prev.filter((x) => x.id !== emp.id),
-                                )
-                              }
+                              onClick={() => handleDelete(emp.id)}
                             >
                               Delete
                             </DropdownMenuItem>
@@ -783,6 +917,18 @@ export function EmployeesClient() {
               </div>
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="add-compensation">Compensation</Label>
+              <Input
+                id="add-compensation"
+                type="number"
+                value={form.compensation}
+                onChange={(e) =>
+                  setForm((s) => ({ ...s, compensation: e.target.value }))
+                }
+                placeholder="50000"
+              />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="add-date">Joined Date</Label>
               <Input
                 id="add-date"
@@ -793,6 +939,11 @@ export function EmployeesClient() {
                 }
               />
             </div>
+            {error ? (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            ) : null}
             <DialogFooter>
               <Button
                 type="button"
@@ -801,8 +952,12 @@ export function EmployeesClient() {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#2563eb] hover:bg-[#1d4ed8]">
-                Add Employee
+              <Button
+                type="submit"
+                className="bg-[#2563eb] hover:bg-[#1d4ed8]"
+                disabled={submitting}
+              >
+                {submitting ? "Adding..." : "Add Employee"}
               </Button>
             </DialogFooter>
           </form>
@@ -811,7 +966,12 @@ export function EmployeesClient() {
 
       <Dialog
         open={!!viewEmployee}
-        onOpenChange={(o) => !o && setViewEmployee(null)}
+        onOpenChange={(o) => {
+          if (!o) {
+            setViewEmployee(null);
+            setIsEditing(false);
+          }
+        }}
       >
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
@@ -819,61 +979,184 @@ export function EmployeesClient() {
             <DialogDescription>{viewEmployee?.email}</DialogDescription>
           </DialogHeader>
           {viewEmployee ? (
-            <div className="grid gap-3 text-sm">
-              <div className="flex items-center gap-3">
-                <Avatar className="size-12">
-                  {viewEmployee.avatarUrl ? (
-                    <AvatarImage
-                      src={viewEmployee.avatarUrl}
-                      alt={viewEmployee.name}
-                    />
-                  ) : null}
-                  <AvatarFallback
-                    className={`${avatarBg(viewEmployee.name)} font-semibold text-[#2b2b46]`}
+            isEditing ? (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label>Department</Label>
+                  <Select
+                    value={editForm.department}
+                    onValueChange={(v) =>
+                      setEditForm((s) => ({
+                        ...s,
+                        department: v as Department,
+                      }))
+                    }
                   >
-                    {viewEmployee.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium text-[#2b2b46]">
-                    {viewEmployee.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {viewEmployee.position}
-                  </p>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEPARTMENTS.map((d) => (
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Badge
-                  className={`ml-auto ${STATUS_STYLE[viewEmployee.status]}`}
-                >
-                  {viewEmployee.status}
-                </Badge>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-position">Position</Label>
+                  <Input
+                    id="edit-position"
+                    value={editForm.position}
+                    onChange={(e) =>
+                      setEditForm((s) => ({ ...s, position: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={editForm.status}
+                      onValueChange={(v) =>
+                        setEditForm((s) => ({
+                          ...s,
+                          status: v as EmployeeStatusLabel,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="On Leave">On Leave</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Employment Type</Label>
+                    <Select
+                      value={editForm.employmentType}
+                      onValueChange={(v) =>
+                        setEditForm((s) => ({
+                          ...s,
+                          employmentType: v as EmploymentType,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Full Time">Full Time</SelectItem>
+                        <SelectItem value="Contract">Contract</SelectItem>
+                        <SelectItem value="Part Time">Part Time</SelectItem>
+                        <SelectItem value="Intern">Intern</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {error ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                ) : null}
               </div>
-              <div className="grid grid-cols-2 gap-3 rounded-xl bg-muted/40 p-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">Department</p>
-                  <p className="font-medium">{viewEmployee.department}</p>
+            ) : (
+              <div className="grid gap-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <Avatar className="size-12">
+                    {viewEmployee.avatarUrl ? (
+                      <AvatarImage
+                        src={viewEmployee.avatarUrl}
+                        alt={viewEmployee.name}
+                      />
+                    ) : null}
+                    <AvatarFallback
+                      className={`${avatarBg(viewEmployee.name)} font-semibold text-[#2b2b46]`}
+                    >
+                      {viewEmployee.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-[#2b2b46]">
+                      {viewEmployee.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {viewEmployee.position}
+                    </p>
+                  </div>
+                  <Badge
+                    className={`ml-auto ${STATUS_STYLE[viewEmployee.status]}`}
+                  >
+                    {viewEmployee.status}
+                  </Badge>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Employment Type
-                  </p>
-                  <p className="font-medium">{viewEmployee.employmentType}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Joined Date</p>
-                  <p className="font-medium">{viewEmployee.joinedDate}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Email</p>
-                  <p className="font-medium break-all">{viewEmployee.email}</p>
+                <div className="grid grid-cols-2 gap-3 rounded-xl bg-muted/40 p-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Department</p>
+                    <p className="font-medium">{viewEmployee.department}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Employment Type
+                    </p>
+                    <p className="font-medium">{viewEmployee.employmentType}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Joined Date</p>
+                    <p className="font-medium">{viewEmployee.joinedDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email</p>
+                    <p className="font-medium break-all">
+                      {viewEmployee.email}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )
           ) : null}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewEmployee(null)}>
-              Close
-            </Button>
+            {isEditing ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditing(false)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleUpdate}
+                  className="bg-[#2563eb] hover:bg-[#1d4ed8]"
+                  disabled={submitting}
+                >
+                  {submitting ? "Saving..." : "Save"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                  disabled={submitting}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setViewEmployee(null);
+                    setIsEditing(false);
+                  }}
+                >
+                  Close
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

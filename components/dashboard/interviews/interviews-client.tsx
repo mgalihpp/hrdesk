@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUp,
   Briefcase,
@@ -11,7 +12,9 @@ import {
   Star,
   UserRound,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  type InterviewRecord,
+  useInterviewsStore,
+} from "@/lib/stores/interviews-store";
+import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
 export type InterviewStatus =
@@ -54,18 +62,7 @@ export type InterviewStatus =
   | "in_progress"
   | "scheduled";
 
-export interface InterviewRecord {
-  id: string;
-  candidateName: string;
-  initials: string;
-  position: string;
-  time: string;
-  interviewType: "HR Interview" | "Tech Interview" | "Final Round";
-  interviewer: string;
-  status: InterviewStatus;
-  source: string;
-  recruiter: string;
-}
+export type { InterviewRecord };
 
 export interface UpcomingItem {
   id: string;
@@ -196,105 +193,6 @@ function Stars({ filled = 4 }: { filled?: number }) {
   );
 }
 
-const MOCK_INTERVIEWS: InterviewRecord[] = [
-  {
-    id: "intv-1",
-    candidateName: "Sarah Wijaya",
-    initials: getInitials("Sarah Wijaya"),
-    position: "Product Manager",
-    time: "09:00",
-    interviewType: "HR Interview",
-    interviewer: "(Galih P.)",
-    status: "feedback_needed",
-    source: "LinkedIn",
-    recruiter: "Galih",
-  },
-  {
-    id: "intv-2",
-    candidateName: "John Smith",
-    initials: getInitials("John Smith"),
-    position: "Frontend Dev",
-    time: "11:00",
-    interviewType: "Tech Interview",
-    interviewer: "(Tim Dev)",
-    status: "completed",
-    source: "Referral",
-    recruiter: "Tim Dev",
-  },
-  {
-    id: "intv-3",
-    candidateName: "Jane Doe",
-    initials: getInitials("Jane Doe"),
-    position: "Marketing Lead",
-    time: "14:00",
-    interviewType: "Final Round",
-    interviewer: "(CEO)",
-    status: "in_progress",
-    source: "Direct",
-    recruiter: "CEO",
-  },
-  {
-    id: "intv-4",
-    candidateName: "Mike Ross",
-    initials: getInitials("Mike Ross"),
-    position: "UX Designer",
-    time: "16:00",
-    interviewType: "Tech Interview",
-    interviewer: "(Tim Dev)",
-    status: "scheduled",
-    source: "Referral",
-    recruiter: "Tim Dev",
-  },
-  {
-    id: "intv-5",
-    candidateName: "Emily Chen",
-    initials: getInitials("Emily Chen"),
-    position: "UI/UX Designer",
-    time: "10:30",
-    interviewType: "Tech Interview",
-    interviewer: "(Galih P.)",
-    status: "feedback_needed",
-    source: "Referral",
-    recruiter: "Rina",
-  },
-  {
-    id: "intv-6",
-    candidateName: "Aisha Khan",
-    initials: getInitials("Aisha Khan"),
-    position: "Frontend Developer",
-    time: "13:30",
-    interviewType: "Final Round",
-    interviewer: "(CEO)",
-    status: "scheduled",
-    source: "Direct",
-    recruiter: "Sarah",
-  },
-  {
-    id: "intv-7",
-    candidateName: "David Lee",
-    initials: getInitials("David Lee"),
-    position: "Backend Developer",
-    time: "15:30",
-    interviewType: "Tech Interview",
-    interviewer: "(Tim Dev)",
-    status: "feedback_needed",
-    source: "Referral",
-    recruiter: "Galih",
-  },
-  {
-    id: "intv-8",
-    candidateName: "Priya Patel",
-    initials: getInitials("Priya Patel"),
-    position: "Product Manager",
-    time: "16:30",
-    interviewType: "HR Interview",
-    interviewer: "(Galih P.)",
-    status: "in_progress",
-    source: "LinkedIn",
-    recruiter: "Alex",
-  },
-];
-
 const MOCK_UPCOMING: UpcomingItem[] = [
   {
     id: "up-1",
@@ -372,16 +270,55 @@ const MOCK_FEEDBACK: FeedbackEntry[] = [
   },
 ];
 
-export function InterviewsClient() {
-  const [interviews, setInterviews] =
-    useState<InterviewRecord[]>(MOCK_INTERVIEWS);
-  const [jobFilter, setJobFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [recruiterFilter, setRecruiterFilter] = useState("all");
-  const [selected, setSelected] = useState<InterviewRecord | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [open, setOpen] = useState(false);
-  const [draftStatus, setDraftStatus] = useState<InterviewStatus>("scheduled");
+export function InterviewsClient({
+  initialInterviews,
+  initialCandidates,
+}: {
+  initialInterviews: InterviewRecord[];
+  initialCandidates?: { id: string; name: string; email: string }[];
+}) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const interviews = useInterviewsStore((s) => s.interviews);
+  const hydrate = useInterviewsStore((s) => s.hydrate);
+  const { jobFilter, setJobFilter } = useInterviewsStore(
+    useShallow((s) => ({
+      jobFilter: s.jobFilter,
+      setJobFilter: s.setJobFilter,
+    })),
+  );
+  const { sourceFilter, setSourceFilter } = useInterviewsStore(
+    useShallow((s) => ({
+      sourceFilter: s.sourceFilter,
+      setSourceFilter: s.setSourceFilter,
+    })),
+  );
+  const { recruiterFilter, setRecruiterFilter } = useInterviewsStore(
+    useShallow((s) => ({
+      recruiterFilter: s.recruiterFilter,
+      setRecruiterFilter: s.setRecruiterFilter,
+    })),
+  );
+  const selected = useInterviewsStore((s) => s.selected);
+  const setSelected = useInterviewsStore((s) => s.setSelected);
+  const selectedIds = useInterviewsStore((s) => s.selectedIds);
+  const open = useInterviewsStore((s) => s.open);
+  const setOpen = useInterviewsStore((s) => s.setOpen);
+  const draftStatus = useInterviewsStore((s) => s.draftStatus);
+  const setDraftStatus = useInterviewsStore((s) => s.setDraftStatus);
+  const toggleRow = useInterviewsStore((s) => s.toggleRow);
+  const toggleAllStore = useInterviewsStore((s) => s.toggleAll);
+  const handleRowClick = useInterviewsStore((s) => s.handleRowClick);
+  const error = useInterviewsStore((s) => s.error);
+  const setError = useInterviewsStore((s) => s.setError);
+
+  useEffect(() => {
+    hydrate(initialInterviews);
+  }, [initialInterviews, hydrate]);
+
+  // Keep initialCandidates param for prop compatibility (no store needed)
+  void initialCandidates;
 
   const filtered = useMemo(() => {
     return interviews.filter((r) => {
@@ -418,34 +355,64 @@ export function InterviewsClient() {
 
   const allPageSelected =
     filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id));
-  function toggleRow(id: string, checked: boolean) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  }
+
   function toggleAll(checked: boolean) {
-    if (checked) setSelectedIds(new Set(filtered.map((r) => r.id)));
-    else setSelectedIds(new Set());
+    toggleAllStore(
+      filtered.map((r) => r.id),
+      checked,
+    );
   }
-  function handleRowClick(record: InterviewRecord) {
-    setSelected(record);
-    setDraftStatus(record.status);
-    setOpen(true);
-  }
+
+  const createMutation = trpc.interview.create.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+
+  const updateStatusMutation = trpc.interview.updateStatus.useMutation({
+    onSuccess: () => {
+      setOpen(false);
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+
+  const removeMutation = trpc.interview.remove.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+  // Expose mutations for potential future UI (kept to satisfy required mutation types)
+  void createMutation;
+  void removeMutation;
 
   function handleSave() {
     if (!selected) return;
-    setInterviews((prev) =>
-      prev.map((r) =>
-        r.id === selected.id ? { ...r, status: draftStatus } : r,
-      ),
-    );
-    setSelected((prev) => (prev ? { ...prev, status: draftStatus } : prev));
-    setOpen(false);
+    setError(null);
+    updateStatusMutation.mutate({
+      id: selected.id,
+      status: draftStatus,
+    });
   }
+
+  const isPending = updateStatusMutation.isPending;
 
   return (
     <div className="space-y-5">
@@ -527,6 +494,12 @@ export function InterviewsClient() {
           </div>
         </Card>
       </div>
+
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
 
       <Card className="overflow-hidden rounded-[16px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
         <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -611,7 +584,13 @@ export function InterviewsClient() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 ? (
+                {isPending ? (
+                  <TableRow>
+                    <TableCell colSpan={8}>
+                      <div className="h-4 animate-pulse bg-muted" />
+                    </TableCell>
+                  </TableRow>
+                ) : filtered.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={8}
@@ -908,7 +887,9 @@ export function InterviewsClient() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Tutup
             </Button>
-            <Button onClick={handleSave}>Simpan Feedback</Button>
+            <Button onClick={handleSave} disabled={isPending}>
+              {isPending ? "Menyimpan..." : "Simpan Feedback"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUp,
   Briefcase,
@@ -24,7 +25,9 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,13 +60,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DEPARTMENTS_MOCK } from "@/lib/departments/mock";
 import type {
   DepartmentDisplay,
   DepartmentIconKey,
   DepartmentLocation,
   DepartmentStatus,
 } from "@/lib/departments/types";
+import { useDepartmentsStore } from "@/lib/stores/departments-store";
+import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLE: Record<DepartmentStatus, string> = {
@@ -187,31 +191,57 @@ function formatBudget(v: number): string {
   return `${v}%`;
 }
 
-export function DepartmentsClient() {
-  const [departments, setDepartments] =
-    useState<DepartmentDisplay[]>(DEPARTMENTS_MOCK);
-  const [q, setQ] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [locationFilter, setLocationFilter] = useState("all");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [addOpen, setAddOpen] = useState(false);
-  const [viewDept, setViewDept] = useState<DepartmentDisplay | null>(null);
-  const [editDept, setEditDept] = useState<DepartmentDisplay | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<DepartmentDisplay | null>(
-    null,
+export function DepartmentsClient({
+  initialDepartments,
+}: {
+  initialDepartments: DepartmentDisplay[];
+}) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const departments = useDepartmentsStore((s) => s.departments);
+  const hydrate = useDepartmentsStore((s) => s.hydrate);
+  const { q, setQ } = useDepartmentsStore(
+    useShallow((s) => ({ q: s.q, setQ: s.setQ })),
   );
-  const [form, setForm] = useState({
-    name: "",
-    iconKey: "engineering" as DepartmentIconKey,
-    headName: "",
-    headEmail: "",
-    location: "HQ" as DepartmentLocation,
-    activeEmployees: 1,
-    budgetUtil: 50,
-    status: "Active" as DepartmentStatus,
-  });
+  const { statusFilter, setStatusFilter } = useDepartmentsStore(
+    useShallow((s) => ({
+      statusFilter: s.statusFilter,
+      setStatusFilter: s.setStatusFilter,
+    })),
+  );
+  const { locationFilter, setLocationFilter } = useDepartmentsStore(
+    useShallow((s) => ({
+      locationFilter: s.locationFilter,
+      setLocationFilter: s.setLocationFilter,
+    })),
+  );
+  const { page, setPage } = useDepartmentsStore(
+    useShallow((s) => ({ page: s.page, setPage: s.setPage })),
+  );
+  const { pageSize, setPageSize } = useDepartmentsStore(
+    useShallow((s) => ({ pageSize: s.pageSize, setPageSize: s.setPageSize })),
+  );
+  const selected = useDepartmentsStore((s) => s.selected);
+  const toggleRowStore = useDepartmentsStore((s) => s.toggleRow);
+  const toggleAllStore = useDepartmentsStore((s) => s.toggleAll);
+  const addOpen = useDepartmentsStore((s) => s.addOpen);
+  const setAddOpen = useDepartmentsStore((s) => s.setAddOpen);
+  const viewDept = useDepartmentsStore((s) => s.viewDept);
+  const setViewDept = useDepartmentsStore((s) => s.setViewDept);
+  const editDept = useDepartmentsStore((s) => s.editDept);
+  const setEditDept = useDepartmentsStore((s) => s.setEditDept);
+  const deleteTarget = useDepartmentsStore((s) => s.deleteTarget);
+  const setDeleteTarget = useDepartmentsStore((s) => s.setDeleteTarget);
+  const form = useDepartmentsStore((s) => s.form);
+  const setForm = useDepartmentsStore((s) => s.setForm);
+  const resetForm = useDepartmentsStore((s) => s.resetForm);
+  const error = useDepartmentsStore((s) => s.error);
+  const setError = useDepartmentsStore((s) => s.setError);
+
+  useEffect(() => {
+    hydrate(initialDepartments);
+  }, [initialDepartments, hydrate]);
 
   const filtered = useMemo(
     () =>
@@ -272,23 +302,14 @@ export function DepartmentsClient() {
   }, [totalPages, currentPage]);
 
   function toggleRow(id: string, checked: boolean) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(id);
-      else next.delete(id);
-      return next;
-    });
+    toggleRowStore(id, checked);
   }
 
   function toggleAll(checked: boolean) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      for (const r of pageRows) {
-        if (checked) next.add(r.id);
-        else next.delete(r.id);
-      }
-      return next;
-    });
+    toggleAllStore(
+      pageRows.map((r) => r.id),
+      checked,
+    );
   }
 
   function handleExport() {
@@ -304,86 +325,91 @@ export function DepartmentsClient() {
     URL.revokeObjectURL(url);
   }
 
-  function resetForm() {
-    setForm({
-      name: "",
-      iconKey: "engineering",
-      headName: "",
-      headEmail: "",
-      location: "HQ",
-      activeEmployees: 1,
-      budgetUtil: 50,
-      status: "Active",
-    });
-  }
+  const createMutation = trpc.department.create.useMutation({
+    onSuccess: () => {
+      setAddOpen(false);
+      resetForm();
+      setPage(1);
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("Only owner/admin/hr can edit departments.");
+      else setError(error.message);
+    },
+  });
+
+  const updateMutation = trpc.department.update.useMutation({
+    onSuccess: () => {
+      setEditDept(null);
+      resetForm();
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("Only owner/admin/hr can edit departments.");
+      else setError(error.message);
+    },
+  });
+
+  const removeMutation = trpc.department.remove.useMutation({
+    onSuccess: () => {
+      setDeleteTarget(null);
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("Only owner/admin/hr can delete departments.");
+      else setError(error.message);
+    },
+  });
+
+  const isPending =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    removeMutation.isPending;
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.headName.trim()) return;
-    const newDept: DepartmentDisplay = {
-      id: `dept-${Date.now()}`,
+    setError(null);
+    createMutation.mutate({
       name: form.name.trim(),
       iconKey: form.iconKey,
-      head: {
-        name: form.headName.trim(),
-        email:
-          form.headEmail.trim() ||
-          `${form.headName.trim().toLowerCase().replace(/\s+/g, ".")}@saasdesk.com`,
-        avatarUrl: "",
-        initials: getInitials(form.headName.trim()),
-      },
+      headName: form.headName.trim(),
+      headEmail:
+        form.headEmail.trim() ||
+        `${form.headName.trim().toLowerCase().replace(/\s+/g, ".")}@saasdesk.com`,
       location: form.location,
-      activeEmployees: Math.max(0, Number(form.activeEmployees) || 0),
-      budgetUtil: Math.min(100, Math.max(0, Number(form.budgetUtil) || 0)),
       status: form.status,
-    };
-    setDepartments((prev) => [newDept, ...prev]);
-    setAddOpen(false);
-    resetForm();
-    setPage(1);
+    });
   }
 
   function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editDept) return;
     if (!form.name.trim() || !form.headName.trim()) return;
-    setDepartments((prev) =>
-      prev.map((d) =>
-        d.id === editDept.id
-          ? {
-              ...d,
-              name: form.name.trim(),
-              iconKey: form.iconKey,
-              head: {
-                name: form.headName.trim(),
-                email: form.headEmail.trim() || d.head.email,
-                avatarUrl: d.head.avatarUrl,
-                initials: getInitials(form.headName.trim()),
-              },
-              location: form.location,
-              activeEmployees: Math.max(0, Number(form.activeEmployees) || 0),
-              budgetUtil: Math.min(
-                100,
-                Math.max(0, Number(form.budgetUtil) || 0),
-              ),
-              status: form.status,
-            }
-          : d,
-      ),
-    );
-    setEditDept(null);
-    resetForm();
+    setError(null);
+    updateMutation.mutate({
+      id: editDept.id,
+      patch: {
+        name: form.name.trim(),
+        iconKey: form.iconKey,
+        headName: form.headName.trim(),
+        headEmail: form.headEmail.trim() || undefined,
+        location: form.location,
+        status: form.status,
+      },
+    });
   }
 
   function handleDelete() {
     if (!deleteTarget) return;
-    setDepartments((prev) => prev.filter((d) => d.id !== deleteTarget.id));
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.delete(deleteTarget.id);
-      return next;
-    });
-    setDeleteTarget(null);
+    setError(null);
+    removeMutation.mutate({ id: deleteTarget.id });
   }
 
   function openEdit(dept: DepartmentDisplay) {
@@ -482,21 +508,12 @@ export function DepartmentsClient() {
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={q}
-                onChange={(e) => {
-                  setQ(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => setQ(e.target.value)}
                 placeholder="Search departments..."
                 className="h-9 rounded-lg border-border bg-muted pl-9"
               />
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => {
-                setStatusFilter(v);
-                setPage(1);
-              }}
-            >
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9 w-[150px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -506,13 +523,7 @@ export function DepartmentsClient() {
                 <SelectItem value="Inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <Select
-              value={locationFilter}
-              onValueChange={(v) => {
-                setLocationFilter(v);
-                setPage(1);
-              }}
-            >
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
               <SelectTrigger className="h-9 w-[150px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
@@ -542,6 +553,11 @@ export function DepartmentsClient() {
           </div>
         </div>
       </Card>
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
 
       <Card className="overflow-hidden rounded-[16px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
         <div className="overflow-x-auto">
@@ -579,7 +595,13 @@ export function DepartmentsClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pageRows.length === 0 ? (
+              {isPending ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <div className="h-4 animate-pulse bg-muted" />
+                  </TableCell>
+                </TableRow>
+              ) : pageRows.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={8}
@@ -720,7 +742,7 @@ export function DepartmentsClient() {
               size="icon-sm"
               className="size-7 rounded-lg"
               disabled={currentPage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage(Math.max(1, page - 1))}
               aria-label="Previous page"
             >
               <ChevronLeft className="size-4" />
@@ -754,7 +776,7 @@ export function DepartmentsClient() {
               size="icon-sm"
               className="size-7 rounded-lg"
               disabled={currentPage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
               aria-label="Next page"
             >
               <ChevronRight className="size-4" />
@@ -793,9 +815,7 @@ export function DepartmentsClient() {
               <Input
                 id="add-name"
                 value={form.name}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, name: e.target.value }))
-                }
+                onChange={(e) => setForm({ name: e.target.value })}
                 placeholder="Engineering"
                 required
               />
@@ -805,7 +825,7 @@ export function DepartmentsClient() {
               <Select
                 value={form.iconKey}
                 onValueChange={(v) =>
-                  setForm((s) => ({ ...s, iconKey: v as DepartmentIconKey }))
+                  setForm({ iconKey: v as DepartmentIconKey })
                 }
               >
                 <SelectTrigger>
@@ -826,9 +846,7 @@ export function DepartmentsClient() {
                 <Input
                   id="add-head-name"
                   value={form.headName}
-                  onChange={(e) =>
-                    setForm((s) => ({ ...s, headName: e.target.value }))
-                  }
+                  onChange={(e) => setForm({ headName: e.target.value })}
                   placeholder="Jane Doe"
                   required
                 />
@@ -839,9 +857,7 @@ export function DepartmentsClient() {
                   id="add-head-email"
                   type="email"
                   value={form.headEmail}
-                  onChange={(e) =>
-                    setForm((s) => ({ ...s, headEmail: e.target.value }))
-                  }
+                  onChange={(e) => setForm({ headEmail: e.target.value })}
                   placeholder="jane@saasdesk.com"
                 />
               </div>
@@ -852,10 +868,7 @@ export function DepartmentsClient() {
                 <Select
                   value={form.location}
                   onValueChange={(v) =>
-                    setForm((s) => ({
-                      ...s,
-                      location: v as DepartmentLocation,
-                    }))
+                    setForm({ location: v as DepartmentLocation })
                   }
                 >
                   <SelectTrigger>
@@ -875,10 +888,7 @@ export function DepartmentsClient() {
                   min={0}
                   value={form.activeEmployees}
                   onChange={(e) =>
-                    setForm((s) => ({
-                      ...s,
-                      activeEmployees: Number(e.target.value),
-                    }))
+                    setForm({ activeEmployees: Number(e.target.value) })
                   }
                 />
               </div>
@@ -893,10 +903,7 @@ export function DepartmentsClient() {
                   max={100}
                   value={form.budgetUtil}
                   onChange={(e) =>
-                    setForm((s) => ({
-                      ...s,
-                      budgetUtil: Number(e.target.value),
-                    }))
+                    setForm({ budgetUtil: Number(e.target.value) })
                   }
                 />
               </div>
@@ -905,7 +912,7 @@ export function DepartmentsClient() {
                 <Select
                   value={form.status}
                   onValueChange={(v) =>
-                    setForm((s) => ({ ...s, status: v as DepartmentStatus }))
+                    setForm({ status: v as DepartmentStatus })
                   }
                 >
                   <SelectTrigger>
@@ -929,8 +936,12 @@ export function DepartmentsClient() {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#2563eb] hover:bg-[#1d4ed8]">
-                Add Department
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="bg-[#2563eb] hover:bg-[#1d4ed8]"
+              >
+                {createMutation.isPending ? "Adding..." : "Add Department"}
               </Button>
             </DialogFooter>
           </form>
@@ -1044,9 +1055,7 @@ export function DepartmentsClient() {
               <Input
                 id="edit-name"
                 value={form.name}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, name: e.target.value }))
-                }
+                onChange={(e) => setForm({ name: e.target.value })}
                 required
               />
             </div>
@@ -1055,7 +1064,7 @@ export function DepartmentsClient() {
               <Select
                 value={form.iconKey}
                 onValueChange={(v) =>
-                  setForm((s) => ({ ...s, iconKey: v as DepartmentIconKey }))
+                  setForm({ iconKey: v as DepartmentIconKey })
                 }
               >
                 <SelectTrigger>
@@ -1076,9 +1085,7 @@ export function DepartmentsClient() {
                 <Input
                   id="edit-head-name"
                   value={form.headName}
-                  onChange={(e) =>
-                    setForm((s) => ({ ...s, headName: e.target.value }))
-                  }
+                  onChange={(e) => setForm({ headName: e.target.value })}
                   required
                 />
               </div>
@@ -1088,9 +1095,7 @@ export function DepartmentsClient() {
                   id="edit-head-email"
                   type="email"
                   value={form.headEmail}
-                  onChange={(e) =>
-                    setForm((s) => ({ ...s, headEmail: e.target.value }))
-                  }
+                  onChange={(e) => setForm({ headEmail: e.target.value })}
                 />
               </div>
             </div>
@@ -1100,10 +1105,7 @@ export function DepartmentsClient() {
                 <Select
                   value={form.location}
                   onValueChange={(v) =>
-                    setForm((s) => ({
-                      ...s,
-                      location: v as DepartmentLocation,
-                    }))
+                    setForm({ location: v as DepartmentLocation })
                   }
                 >
                   <SelectTrigger>
@@ -1123,10 +1125,7 @@ export function DepartmentsClient() {
                   min={0}
                   value={form.activeEmployees}
                   onChange={(e) =>
-                    setForm((s) => ({
-                      ...s,
-                      activeEmployees: Number(e.target.value),
-                    }))
+                    setForm({ activeEmployees: Number(e.target.value) })
                   }
                 />
               </div>
@@ -1141,10 +1140,7 @@ export function DepartmentsClient() {
                   max={100}
                   value={form.budgetUtil}
                   onChange={(e) =>
-                    setForm((s) => ({
-                      ...s,
-                      budgetUtil: Number(e.target.value),
-                    }))
+                    setForm({ budgetUtil: Number(e.target.value) })
                   }
                 />
               </div>
@@ -1153,7 +1149,7 @@ export function DepartmentsClient() {
                 <Select
                   value={form.status}
                   onValueChange={(v) =>
-                    setForm((s) => ({ ...s, status: v as DepartmentStatus }))
+                    setForm({ status: v as DepartmentStatus })
                   }
                 >
                   <SelectTrigger>
@@ -1174,8 +1170,12 @@ export function DepartmentsClient() {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#2563eb] hover:bg-[#1d4ed8]">
-                Save Changes
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="bg-[#2563eb] hover:bg-[#1d4ed8]"
+              >
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </DialogFooter>
           </form>
@@ -1198,8 +1198,12 @@ export function DepartmentsClient() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
+            <Button
+              variant="destructive"
+              disabled={isPending}
+              onClick={handleDelete}
+            >
+              {removeMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

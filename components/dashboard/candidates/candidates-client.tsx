@@ -6,9 +6,11 @@ import {
   CalendarDays,
   ClipboardCheck,
   GripVertical,
+  Plus,
   Tag,
   Users,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +20,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -30,7 +35,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { canTransition, nextStages } from "@/lib/recruitment/pipeline";
-import type { CandidateStage } from "@/lib/recruitment/types";
+import type {
+  CandidateStage,
+  CandidateView,
+  Job,
+} from "@/lib/recruitment/types";
 import { cn } from "@/lib/utils";
 
 export type CandidateDisplay = {
@@ -120,216 +129,29 @@ function matchesFilters(
   return byJob && byCandidate && bySource && byRecruiter;
 }
 
-const MOCK_CANDIDATES: CandidateDisplay[] = [
-  {
-    id: "c-1",
-    name: "Jane Doe",
-    role: "Frontend Developer",
-    stage: "applied",
-    appliedAt: "14.25",
+function toDisplay(c: CandidateView, jobs: Job[]): CandidateDisplay {
+  const job = jobs.find((j) => j.id === c.jobId);
+  const title = job?.title ?? "Unknown Position";
+  const name = `${c.firstName} ${c.lastName}`.trim() || c.email;
+  const created = new Date(c.createdAt);
+  const appliedAt = Number.isNaN(created.getTime())
+    ? c.createdAt.slice(0, 10)
+    : `${String(created.getHours()).padStart(2, "0")}.${String(created.getMinutes()).padStart(2, "0")}`;
+  // hired/rejected stages fall back to offer column; keep raw stage for logic
+  const stage = c.stage as CandidateStage;
+  return {
+    id: c.id as string,
+    name,
+    role: title,
+    stage,
+    appliedAt,
     avatar: "",
-    initials: getInitials("Jane Doe"),
+    initials: getInitials(name),
     source: "Referral",
-    rating: "4.8",
-    job: "Frontend Developer",
+    job: title,
     recruiter: "Galih",
-  },
-  {
-    id: "c-2",
-    name: "Sarah Wijaya",
-    role: "Product Manager",
-    stage: "applied",
-    appliedAt: "14.22",
-    avatar: "",
-    initials: getInitials("Sarah Wijaya"),
-    source: "LinkedIn",
-    status: "Current",
-    job: "Product Manager",
-    recruiter: "Alex",
-  },
-  {
-    id: "c-3",
-    name: "John Smith",
-    role: "Backend Developer",
-    stage: "applied",
-    appliedAt: "14.20",
-    avatar: "",
-    initials: getInitials("John Smith"),
-    source: "Direct",
-    rating: "4.5",
-    job: "Backend Developer",
-    recruiter: "Maya",
-  },
-  {
-    id: "c-4",
-    name: "Emily Chen",
-    role: "UI/UX Designer",
-    stage: "applied",
-    appliedAt: "14.18",
-    avatar: "",
-    initials: getInitials("Emily Chen"),
-    source: "Referral",
-    rating: "4.9",
-    job: "UI/UX Designer",
-    recruiter: "Galih",
-  },
-  {
-    id: "c-5",
-    name: "Michael Brown",
-    role: "Data Analyst",
-    stage: "applied",
-    appliedAt: "14.15",
-    avatar: "",
-    initials: getInitials("Michael Brown"),
-    source: "LinkedIn",
-    status: "New",
-    job: "Data Analyst",
-    recruiter: "Alex",
-  },
-  {
-    id: "c-6",
-    name: "Aisha Khan",
-    role: "Product Manager",
-    stage: "screening",
-    appliedAt: "13.40",
-    avatar: "",
-    initials: getInitials("Aisha Khan"),
-    source: "Direct",
-    rating: "4.6",
-    job: "Product Manager",
-    recruiter: "Maya",
-  },
-  {
-    id: "c-7",
-    name: "David Lee",
-    role: "Frontend Developer",
-    stage: "screening",
-    appliedAt: "13.30",
-    avatar: "",
-    initials: getInitials("David Lee"),
-    source: "Referral",
-    status: "Screening",
-    job: "Frontend Developer",
-    recruiter: "Galih",
-  },
-  {
-    id: "c-8",
-    name: "Priya Patel",
-    role: "Backend Developer",
-    stage: "screening",
-    appliedAt: "13.12",
-    avatar: "",
-    initials: getInitials("Priya Patel"),
-    source: "LinkedIn",
-    rating: "4.7",
-    job: "Backend Developer",
-    recruiter: "Alex",
-  },
-  {
-    id: "c-9",
-    name: "Carlos Rivera",
-    role: "UI/UX Designer",
-    stage: "screening",
-    appliedAt: "12.55",
-    avatar: "",
-    initials: getInitials("Carlos Rivera"),
-    source: "Direct",
-    rating: "4.4",
-    job: "UI/UX Designer",
-    recruiter: "Maya",
-  },
-  {
-    id: "c-10",
-    name: "Olivia Taylor",
-    role: "Product Manager",
-    stage: "interview",
-    appliedAt: "12.30",
-    avatar: "",
-    initials: getInitials("Olivia Taylor"),
-    source: "Referral",
-    status: "Interview",
-    job: "Product Manager",
-    recruiter: "Galih",
-  },
-  {
-    id: "c-11",
-    name: "James Wilson",
-    role: "Frontend Developer",
-    stage: "interview",
-    appliedAt: "12.10",
-    avatar: "",
-    initials: getInitials("James Wilson"),
-    source: "LinkedIn",
-    rating: "4.3",
-    job: "Frontend Developer",
-    recruiter: "Alex",
-  },
-  {
-    id: "c-12",
-    name: "Sofia Garcia",
-    role: "Backend Developer",
-    stage: "interview",
-    appliedAt: "11.50",
-    avatar: "",
-    initials: getInitials("Sofia Garcia"),
-    source: "Direct",
-    rating: "4.8",
-    job: "Backend Developer",
-    recruiter: "Maya",
-  },
-  {
-    id: "c-13",
-    name: "Liam Johnson",
-    role: "UI/UX Designer",
-    stage: "interview",
-    appliedAt: "11.20",
-    avatar: "",
-    initials: getInitials("Liam Johnson"),
-    source: "Referral",
-    status: "Interview",
-    job: "UI/UX Designer",
-    recruiter: "Galih",
-  },
-  {
-    id: "c-14",
-    name: "Emma Davis",
-    role: "Product Manager",
-    stage: "offer",
-    appliedAt: "10.40",
-    avatar: "",
-    initials: getInitials("Emma Davis"),
-    source: "LinkedIn",
-    status: "Offered",
-    job: "Product Manager",
-    recruiter: "Alex",
-  },
-  {
-    id: "c-15",
-    name: "Noah Martinez",
-    role: "Frontend Developer",
-    stage: "offer",
-    appliedAt: "10.10",
-    avatar: "",
-    initials: getInitials("Noah Martinez"),
-    source: "Direct",
-    rating: "4.9",
-    job: "Frontend Developer",
-    recruiter: "Maya",
-  },
-  {
-    id: "c-16",
-    name: "Ava Anderson",
-    role: "Backend Developer",
-    stage: "offer",
-    appliedAt: "09.55",
-    avatar: "",
-    initials: getInitials("Ava Anderson"),
-    source: "Referral",
-    status: "Offered",
-    job: "Backend Developer",
-    recruiter: "Galih",
-  },
-];
+  };
+}
 
 const RECENT_ACTIVITY = [
   {
@@ -407,9 +229,9 @@ function DonutChart({
           strokeWidth={stroke}
         />
         {data.map((d) => {
-          const dash = (d.value / total) * norm;
+          const dash = total === 0 ? 0 : (d.value / total) * norm;
           const gap = norm - dash;
-          const offset = (acc / total) * norm;
+          const offset = total === 0 ? 0 : (acc / total) * norm;
           acc += d.value;
           return (
             <circle
@@ -437,9 +259,17 @@ function DonutChart({
   );
 }
 
-export function CandidatesClient() {
-  const [candidates, setCandidates] =
-    useState<CandidateDisplay[]>(MOCK_CANDIDATES);
+export function CandidatesClient({
+  initialCandidates,
+  initialJobs,
+}: {
+  initialCandidates: CandidateView[];
+  initialJobs: Job[];
+}) {
+  const router = useRouter();
+  const [candidates, setCandidates] = useState<CandidateDisplay[]>(() =>
+    initialCandidates.map((c) => toDisplay(c, initialJobs)),
+  );
   const [jobFilter, setJobFilter] = useState("all");
   const [candidateFilter, setCandidateFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
@@ -449,6 +279,17 @@ export function CandidatesClient() {
     useState<CandidateStageColumn | null>(null);
   const [selected, setSelected] = useState<CandidateDisplay | null>(null);
   const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hireSubmitting, setHireSubmitting] = useState<string | null>(null);
+  const [createForm, setCreateForm] = useState({
+    jobId: (initialJobs[0]?.id as unknown as string) ?? "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+  });
 
   const filtered = useMemo(
     () =>
@@ -490,10 +331,11 @@ export function CandidatesClient() {
     return m;
   }, [candidates]);
 
-  const jobs = useMemo(
-    () => [...new Set(candidates.map((c) => c.job))],
-    [candidates],
-  );
+  const jobs = useMemo(() => {
+    if (initialJobs.length > 0)
+      return [...new Set(initialJobs.map((j) => j.title))];
+    return [...new Set(candidates.map((c) => c.job))];
+  }, [initialJobs, candidates]);
   const sources = useMemo(
     () => [...new Set(candidates.map((c) => c.source))],
     [candidates],
@@ -511,6 +353,8 @@ export function CandidatesClient() {
     const bySource: Record<string, number> = {};
     for (const c of candidates)
       bySource[c.source] = (bySource[c.source] ?? 0) + 1;
+    if (candidates.length === 0)
+      return [{ label: "Referral", value: 0, color: "#2b7fff" }];
     const colorMap: Record<string, string> = {
       Referral: "#2b7fff",
       LinkedIn: "#1d4ed8",
@@ -522,6 +366,82 @@ export function CandidatesClient() {
       color: colorMap[label] ?? "#94a3b8",
     }));
   }, [candidates]);
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (
+      !createForm.jobId ||
+      !createForm.firstName.trim() ||
+      !createForm.lastName.trim() ||
+      !createForm.email.trim()
+    ) {
+      setError("Job, first name, last name and email are required.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/candidate.create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jobId: createForm.jobId,
+          firstName: createForm.firstName.trim(),
+          lastName: createForm.lastName.trim(),
+          email: createForm.email.trim(),
+          phone: createForm.phone.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Failed to create candidate");
+      }
+      setCreateOpen(false);
+      setCreateForm({
+        jobId: initialJobs[0]?.id ?? "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+      });
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function callMoveStage(id: string, to: CandidateStage) {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/trpc/candidate.moveStage", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, to }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Move failed");
+      }
+      setCandidates((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, stage: to } : c)),
+      );
+      setSelected((prev) =>
+        prev && prev.id === id ? { ...prev, stage: to } : prev,
+      );
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   function handleDrop(target: CandidateStageColumn) {
     if (!draggedId) return;
@@ -540,24 +460,46 @@ export function CandidatesClient() {
       setDragOverColumn(null);
       return;
     }
-    setCandidates((prev) =>
-      prev.map((c) =>
-        c.id === draggedId ? { ...c, stage: target as CandidateStage } : c,
-      ),
-    );
+    // optimistic then live
     setDraggedId(null);
     setDragOverColumn(null);
+    void callMoveStage(dragged.id, target as CandidateStage);
   }
 
   function moveStage(id: string, to: CandidateStage) {
     const from = candidates.find((c) => c.id === id)?.stage;
     if (!from || !canTransition(from, to)) return;
-    setCandidates((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, stage: to } : c)),
-    );
-    setSelected((prev) =>
-      prev && prev.id === id ? { ...prev, stage: to } : prev,
-    );
+    void callMoveStage(id, to);
+  }
+
+  async function handleHire(id: string) {
+    setError(null);
+    setHireSubmitting(id);
+    try {
+      const res = await fetch("/api/trpc/candidate.hire", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id,
+          compensation: 6000000,
+          hireDate: new Date().toISOString().slice(0, 10),
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 403 || text.includes("FORBIDDEN"))
+          throw new Error("You do not have permission.");
+        throw new Error(text || "Hire failed");
+      }
+      setCandidates((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, stage: "hired" } : c)),
+      );
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setHireSubmitting(null);
+    }
   }
 
   return (
@@ -571,11 +513,29 @@ export function CandidatesClient() {
             Manage and track candidate profiles.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-sm text-[#2b2b46] shadow-sm">
-          <Calendar className="size-4 text-muted-foreground" />
-          Thursday, 22 May 2025
+        <div className="flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-sm text-[#2b2b46] shadow-sm">
+            <Calendar className="size-4 text-muted-foreground" />
+            Thursday, 22 May 2025
+          </div>
+          <Button
+            className="h-9 rounded-full bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Plus className="size-4" />
+            Add Candidate
+          </Button>
         </div>
       </div>
+
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+      {submitting ? (
+        <div className="h-2 w-full animate-pulse rounded bg-muted" />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="flex flex-row items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
@@ -587,7 +547,7 @@ export function CandidatesClient() {
               Total Candidates
             </p>
             <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
-              2,540
+              {candidates.length}
             </p>
             <p className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
               <ArrowUp className="size-3" />
@@ -745,6 +705,9 @@ export function CandidatesClient() {
                   </span>
                 </div>
                 <div className="flex flex-col gap-3">
+                  {submitting ? (
+                    <div className="animate-pulse h-16 rounded-[12px] bg-white/60" />
+                  ) : null}
                   {list.map((c) => {
                     const isDragging = draggedId === c.id;
                     return (
@@ -804,7 +767,7 @@ export function CandidatesClient() {
                       </button>
                     );
                   })}
-                  {list.length === 0 ? (
+                  {list.length === 0 && !submitting ? (
                     <p className="py-6 text-center text-xs text-muted-foreground">
                       No candidates
                     </p>
@@ -839,7 +802,6 @@ export function CandidatesClient() {
             </div>
           </div>
         </Card>
-
         <Card className="flex h-[260px] flex-col rounded-[16px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <h3 className="text-sm font-semibold text-[#2b2b46]">
             Recent Candidate Activity
@@ -875,7 +837,6 @@ export function CandidatesClient() {
             View all activity
           </button>
         </Card>
-
         <Card className="flex h-[260px] flex-col rounded-[16px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <h3 className="text-sm font-semibold text-[#2b2b46]">
             Top Candidate Ratings
@@ -980,9 +941,124 @@ export function CandidatesClient() {
                     </span>
                   ) : null}
                 </div>
+                {selected.stage === "offer" ? (
+                  <div className="pt-2">
+                    <Button
+                      size="sm"
+                      className="rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
+                      disabled={hireSubmitting === selected.id}
+                      onClick={() => handleHire(selected.id)}
+                    >
+                      {hireSubmitting === selected.id
+                        ? "Hiring..."
+                        : "Hire candidate"}
+                    </Button>
+                  </div>
+                ) : null}
+                {error ? <p className="text-xs text-red-600">{error}</p> : null}
               </div>
             </>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Add Candidate</DialogTitle>
+            <DialogDescription>
+              Create a new candidate for a job.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreate} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label>Job</Label>
+              <Select
+                value={createForm.jobId}
+                onValueChange={(v) =>
+                  setCreateForm((s) => ({ ...s, jobId: v }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select job" />
+                </SelectTrigger>
+                <SelectContent>
+                  {initialJobs.map((j) => (
+                    <SelectItem key={j.id as string} value={j.id as string}>
+                      {j.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="c-firstName">First Name</Label>
+                <Input
+                  id="c-firstName"
+                  value={createForm.firstName}
+                  onChange={(e) =>
+                    setCreateForm((s) => ({ ...s, firstName: e.target.value }))
+                  }
+                  placeholder="Jane"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="c-lastName">Last Name</Label>
+                <Input
+                  id="c-lastName"
+                  value={createForm.lastName}
+                  onChange={(e) =>
+                    setCreateForm((s) => ({ ...s, lastName: e.target.value }))
+                  }
+                  placeholder="Doe"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="c-email">Email</Label>
+              <Input
+                id="c-email"
+                type="email"
+                value={createForm.email}
+                onChange={(e) =>
+                  setCreateForm((s) => ({ ...s, email: e.target.value }))
+                }
+                placeholder="jane@saasdesk.com"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="c-phone">Phone</Label>
+              <Input
+                id="c-phone"
+                value={createForm.phone}
+                onChange={(e) =>
+                  setCreateForm((s) => ({ ...s, phone: e.target.value }))
+                }
+                placeholder="Optional"
+              />
+            </div>
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCreateOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="bg-[#2563eb] hover:bg-[#1d4ed8]"
+              >
+                {submitting ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
