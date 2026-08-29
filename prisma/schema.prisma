@@ -120,7 +120,6 @@ model Invitation {
   @@map("invitation")
 }
 
-// Tenant settings doc, keyed by the Better Auth organization id (tenantId).
 model Tenant {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   tenantId        String   @unique
@@ -130,9 +129,6 @@ model Tenant {
   brandingLogoUrl String   @default("")
   updatedAt       DateTime @default(now())
 }
-
-// Employee record. PII fields are AES-256-GCM ciphertext (see lib/crypto).
-// compensation is integer minor units (Cents), never a float.
 model Employee {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   tenantId     String

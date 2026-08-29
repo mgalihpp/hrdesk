@@ -95,18 +95,27 @@ export default async function DashboardPage({
   const eRepo = employeeRepo(prisma, tenantId);
   const payRepo = payRunRepo(prisma, tenantId);
   const aRepo = auditRepo(prisma, tenantId);
-  const [overview, series, attendance, payRuns, employeesRaw, pipeline, auditPage, nextPayroll, events] =
-    await Promise.all([
-      repo.overview(range),
-      repo.getPayrollSeries(range),
-      repo.getAttendance(range),
-      payRepo.listWithTotals(),
-      eRepo.list(),
-      repo.getPipeline(),
-      aRepo.list({ limit: 4 }),
-      payRepo.getNextPayroll(),
-      eventRepo(prisma, tenantId).listUpcoming(3),
-    ]);
+  const [
+    overview,
+    series,
+    attendance,
+    payRuns,
+    employeesRaw,
+    pipeline,
+    auditPage,
+    nextPayroll,
+    events,
+  ] = await Promise.all([
+    repo.overview(range),
+    repo.getPayrollSeries(range),
+    repo.getAttendance(range),
+    payRepo.listWithTotals(),
+    eRepo.list(),
+    repo.getPipeline(),
+    aRepo.list({ limit: 4 }),
+    payRepo.getNextPayroll(),
+    eventRepo(prisma, tenantId).listUpcoming(3),
+  ]);
   const employees: EmployeeTableRow[] = employeesRaw.map((e) => ({
     id: e.id as string,
     firstName: e.firstName,
