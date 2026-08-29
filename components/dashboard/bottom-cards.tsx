@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { CandidateStage } from "@/lib/recruitment/types";
 import type { PipelineSummary } from "@/lib/reporting/types";
+import type { Event, EventType } from "@/lib/types";
 
 export function RecruitmentOverview({
   pipeline,
@@ -99,7 +100,16 @@ export function RecruitmentOverview({
   );
 }
 
-export function UpcomingEvents() {
+const EVENT_DISPLAY: Record<
+  EventType,
+  { icon: typeof Calendar; bg: string; fg: string }
+> = {
+  meeting: { icon: Calendar, bg: "bg-[#eef3ff]", fg: "text-[#2563eb]" },
+  interview: { icon: Users, bg: "bg-[#ecfdf5]", fg: "text-[#16a34a]" },
+  payroll: { icon: DollarSign, bg: "bg-[#fff7ed]", fg: "text-[#f97316]" },
+};
+
+export function UpcomingEvents({ events }: { events?: Event[] }) {
   return (
     <div className="rounded-[20px] border bg-white p-5 shadow-[0_1px_2px_rgba(43,43,70,0.06),0_8px_24px_rgba(43,43,70,0.06)]">
       <div className="flex items-center justify-between">
@@ -113,50 +123,43 @@ export function UpcomingEvents() {
           View Calendar
         </Link>
       </div>
-      <div className="mt-4 space-y-4">
-        <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#2563eb]">
-            <Calendar className="size-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[#1e2a4a]">Team Meeting</p>
-            <p className="text-xs text-muted-foreground">Meeting Room A</p>
-          </div>
-          <span className="shrink-0 text-sm font-semibold text-[#1e2a4a]">
-            09:00
-          </span>
+      {!events || events.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">
+          No upcoming events
+        </p>
+      ) : (
+        <div className="mt-4 space-y-4">
+          {events.map((e) => {
+            const display = EVENT_DISPLAY[e.type] ?? EVENT_DISPLAY.meeting;
+            const Icon = display.icon;
+            const time = new Date(e.startAt).toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            });
+            return (
+              <div key={e.id} className="flex items-start gap-3">
+                <span
+                  className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${display.bg} ${display.fg}`}
+                >
+                  <Icon className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[#1e2a4a]">
+                    {e.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {e.location ?? e.type}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm font-semibold text-[#1e2a4a]">
+                  {time}
+                </span>
+              </div>
+            );
+          })}
         </div>
-        <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#ecfdf5] text-[#16a34a]">
-            <Users className="size-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[#1e2a4a]">
-              Interview - UI/UX Designer
-            </p>
-            <p className="text-xs text-muted-foreground">Shinta Wijaya</p>
-          </div>
-          <span className="shrink-0 text-sm font-semibold text-[#1e2a4a]">
-            11:30
-          </span>
-        </div>
-        <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#fff7ed] text-[#f97316]">
-            <DollarSign className="size-4" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[#1e2a4a]">
-              Payroll Review
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Review September Payroll
-            </p>
-          </div>
-          <span className="shrink-0 text-sm font-semibold text-[#1e2a4a]">
-            14:00
-          </span>
-        </div>
-      </div>
+      )}
       <Link
         href="#events"
         className="mt-4 inline-flex text-sm font-semibold text-[#2563eb] hover:underline"
