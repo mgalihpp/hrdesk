@@ -349,6 +349,24 @@ model IntegrationSync {
   @@index([connectionId])
   @@map("integration_sync")
 }
+model Department {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId        String
+  name            String
+  iconKey         String
+  headName        String
+  headEmail       String
+  headAvatarUrl   String?
+  location        String
+  activeEmployees Int      @default(0)
+  budgetUtil      Int      @default(0)
+  status          String   @default("Active")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([tenantId])
+  @@unique([tenantId, name])
+  @@map("department")
+}
 
 model AuditLog {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
