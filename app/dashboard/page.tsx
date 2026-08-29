@@ -7,8 +7,8 @@ import {
   UpcomingEvents,
 } from "@/components/dashboard/bottom-cards";
 import {
-  type EmployeeTableRow,
   EmployeeTable,
+  type EmployeeTableRow,
 } from "@/components/dashboard/employee-table";
 import { NextPayroll } from "@/components/dashboard/next-payroll";
 import { PayrunTable } from "@/components/dashboard/payrun-table";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { EmployeeStatus } from "@/lib/types";
 import type { EmployeeTableRow } from "@/components/dashboard/employee-table";
 import { cents } from "@/lib/money";
+import type { EmployeeStatus } from "@/lib/types";
 
 function matches(row: EmployeeTableRow, q: string, status: string): boolean {
   if (status !== "all" && row.status !== status) return false;
