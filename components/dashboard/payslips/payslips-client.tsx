@@ -654,7 +654,7 @@ export function PayslipsClient() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-sm">
             <thead>
-              <tr className="border-b bg-[#f9fafb] text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              <tr className="border-b bg-[#fbfaf9] text-left text-xs font-medium tracking-wider text-muted-foreground">
                 <th className="w-10 px-3 py-3">
                   <Checkbox
                     checked={allPageSelected}
@@ -662,7 +662,7 @@ export function PayslipsClient() {
                     aria-label="Select all"
                   />
                 </th>
-                <th className="px-3 py-3">
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">
                   <button
                     type="button"
                     onClick={() => setSortAsc((v) => !v)}
@@ -672,12 +672,12 @@ export function PayslipsClient() {
                     <ArrowUpDown className="size-3" />
                   </button>
                 </th>
-                <th className="px-3 py-3">Employee ID</th>
-                <th className="px-3 py-3">Department</th>
-                <th className="px-3 py-3">Last Payrun Date</th>
-                <th className="px-3 py-3">Total Net Pay</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3 text-right">Actions</th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Employee ID</th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Department</th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Last Payrun Date</th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Total Net Pay</th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Status</th>
+                <th className="whitespace-nowrap px-3 py-3 text-right font-medium tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
