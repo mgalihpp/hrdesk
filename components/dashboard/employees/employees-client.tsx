@@ -126,13 +126,13 @@ type ColumnDef = {
 
 const COLUMNS: ColumnDef[] = [
   { key: "check", label: "" },
-  { key: "employee", label: "EMPLOYEE" },
-  { key: "department", label: "DEPARTMENT" },
-  { key: "position", label: "POSITION" },
-  { key: "status", label: "STATUS" },
-  { key: "employmentType", label: "EMPLOYMENT TYPE" },
-  { key: "joinedDate", label: "JOINED DATE" },
-  { key: "actions", label: "ACTIONS" },
+  { key: "employee", label: "Employee" },
+  { key: "department", label: "Department" },
+  { key: "position", label: "Position" },
+  { key: "status", label: "Status" },
+  { key: "employmentType", label: "Employment Type" },
+  { key: "joinedDate", label: "Joined Date" },
+  { key: "actions", label: "Actions" },
 ];
 
 function matchesFilters(
