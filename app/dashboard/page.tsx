@@ -6,7 +6,10 @@ import {
   RecruitmentOverview,
   UpcomingEvents,
 } from "@/components/dashboard/bottom-cards";
-import { EmployeeTable } from "@/components/dashboard/employee-table";
+import {
+  type EmployeeTableRow,
+  EmployeeTable,
+} from "@/components/dashboard/employee-table";
 import { NextPayroll } from "@/components/dashboard/next-payroll";
 import { PayrunTable } from "@/components/dashboard/payrun-table";
 import { QuickActions } from "@/components/dashboard/quick-actions";
@@ -15,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { getShellSession } from "@/lib/shell-session";
 import type { TenantId } from "@/lib/types";
+import { employeeRepo } from "@/server/repo/employee";
 import { payRunRepo } from "@/server/repo/payrun";
 import { reportingRepo } from "@/server/repo/reporting";
 import { CreateWorkspacePrompt } from "./_components/create-workspace-prompt";
@@ -80,13 +84,24 @@ export default async function DashboardPage({
 
   const tenantId = session.user.tenantId as TenantId;
   const repo = reportingRepo(prisma, tenantId);
+  const eRepo = employeeRepo(prisma, tenantId);
   const payRepo = payRunRepo(prisma, tenantId);
-  const [overview, series, attendance, payRuns] = await Promise.all([
+  const [overview, series, attendance, payRuns, employeesRaw] = await Promise.all([
     repo.overview(range),
     repo.getPayrollSeries(range),
     repo.getAttendance(range),
     payRepo.listWithTotals(),
+    eRepo.list(),
   ]);
+  const employees: EmployeeTableRow[] = employeesRaw.map((e) => ({
+    id: e.id as string,
+    firstName: e.firstName,
+    lastName: e.lastName,
+    email: e.email,
+    compensation: e.compensation as unknown as EmployeeTableRow["compensation"],
+    status: e.status,
+    hireDate: e.hireDate,
+  }));
 
   return (
     <div className="space-y-6">
@@ -102,8 +117,7 @@ export default async function DashboardPage({
       <PayrunTable payRuns={payRuns} />
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
-        <EmployeeTable />
-
+        <EmployeeTable employees={employees} />
         <div className="space-y-6">
           <QuickActions />
           <NextPayroll />
