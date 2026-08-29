@@ -61,6 +61,7 @@ export interface InvoiceView {
   createdAt: string;
 }
 
+export type EventId = string & { readonly __brand: "EventId" };
 export type EmployeeId = string & { readonly __brand: "EmployeeId" };
 export type PayRunId = string & { readonly __brand: "PayRunId" };
 export type PayslipId = string & { readonly __brand: "PayslipId" };
@@ -74,6 +75,19 @@ export type IntegrationConnectionId = string & {
 export type IntegrationSyncId = string & {
   readonly __brand: "IntegrationSyncId";
 };
+
+export type EventType = "meeting" | "interview" | "payroll";
+
+export interface Event {
+  id: EventId;
+  tenantId: TenantId;
+  title: string;
+  location: string | null;
+  startAt: string;
+  endAt: string | null;
+  type: EventType;
+  createdAt: string;
+}
 
 export type ReportId = string & { readonly __brand: "ReportId" };
 
