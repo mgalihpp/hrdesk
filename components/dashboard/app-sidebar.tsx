@@ -4,16 +4,19 @@ import {
   BarChart3,
   Briefcase,
   Building2,
+  CalendarClock,
   ChevronDown,
   Clock3,
   CreditCard,
+  FileText,
   HelpCircle,
   LayoutDashboard,
   LogOut,
-  Puzzle,
+  ScrollText,
   Search,
   Settings,
   User,
+  UserCheck,
   Users,
   Wallet,
 } from "lucide-react";
@@ -44,20 +47,55 @@ import { authClient } from "@/lib/auth-client";
 import type { OrgSummary, ShellUser } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+const NAV_GROUPS = [
   {
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-    active: true,
+    label: "OVERVIEW",
+    items: [{ label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }],
   },
-  { label: "Employees", icon: Users, href: "/dashboard/employees" },
-  { label: "Departments", icon: Building2, href: "/dashboard/departments" },
-  { label: "Payroll", icon: Wallet, href: "/dashboard#payroll", badge: "3" },
-  { label: "Attendance", icon: Clock3, href: "/dashboard#attendance" },
-  { label: "Recruitment", icon: Briefcase, href: "/dashboard#recruitment" },
-  { label: "Integrations", icon: Puzzle, href: "/dashboard#integrations" },
-  { label: "Reports", icon: BarChart3, href: "/dashboard#reports" },
+  {
+    label: "PEOPLE",
+    items: [
+      { label: "Employees", icon: Users, href: "/dashboard/employees" },
+      { label: "Departments", icon: Building2, href: "/dashboard/departments" },
+    ],
+  },
+  {
+    label: "TIME",
+    items: [
+      { label: "Attendance", icon: Clock3, href: "/dashboard#attendance" },
+      {
+        label: "Leave Requests",
+        icon: CalendarClock,
+        href: "/dashboard#leave",
+      },
+    ],
+  },
+  {
+    label: "PAYROLL",
+    items: [
+      {
+        label: "Payroll",
+        icon: Wallet,
+        href: "/dashboard#payroll",
+        badge: "3",
+      },
+      { label: "Payslips", icon: ScrollText, href: "/dashboard#payslips" },
+    ],
+  },
+  {
+    label: "HIRING",
+    items: [
+      { label: "Candidates", icon: UserCheck, href: "/dashboard#candidates" },
+      { label: "Interviews", icon: Briefcase, href: "/dashboard#interviews" },
+    ],
+  },
+  {
+    label: "INSIGHTS",
+    items: [
+      { label: "Reports", icon: BarChart3, href: "/dashboard#reports" },
+      { label: "Analytics", icon: FileText, href: "/dashboard#analytics" },
+    ],
+  },
 ] as const;
 
 const SECONDARY = [
@@ -172,47 +210,58 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[11px] font-semibold tracking-widest text-muted-foreground/70">
-            MENU
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {NAV.map((item) => {
-                const isActive =
-                  item.href === "/dashboard"
-                    ? pathname === "/dashboard"
-                    : item.href === "/dashboard/employees"
-                      ? pathname === "/dashboard/employees" ||
-                        pathname.startsWith("/dashboard/employees")
-                      : pathname.startsWith(item.href);
-                return (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className={cn(
-                        "rounded-xl",
-                        isActive &&
-                          "bg-[#2b2b46] text-white hover:bg-[#2b2b46] hover:text-white data-[active=true]:bg-[#2b2b46] data-[active=true]:text-white",
-                      )}
-                    >
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                        {"badge" in item && item.badge ? (
-                          <span className="ml-auto rounded-full bg-[#00acca] px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                            {item.badge}
-                          </span>
-                        ) : null}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {NAV_GROUPS.map((group) => (
+          <SidebarGroup key={group.label} className="py-2">
+            <SidebarGroupLabel className="text-[11px] font-semibold tracking-widest text-muted-foreground/70">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const isActive =
+                    item.href === "/dashboard"
+                      ? pathname === "/dashboard"
+                      : item.href.startsWith("/dashboard/employees") ||
+                          item.href.startsWith("/dashboard/departments")
+                        ? pathname === item.href ||
+                          pathname.startsWith(`${item.href}/`) ||
+                          pathname.startsWith(`${item.href}#`)
+                        : pathname === item.href ||
+                          pathname.startsWith(`${item.href}#`) ||
+                          pathname.startsWith(`${item.href}/`);
+                  return (
+                    <SidebarMenuItem key={item.label}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        className={cn(
+                          "rounded-xl",
+                          isActive &&
+                            "bg-[#2b2b46] text-white hover:bg-[#2b2b46] hover:text-white data-[active=true]:bg-[#2b2b46] data-[active=true]:text-white",
+                        )}
+                      >
+                        <Link href={item.href}>
+                          <item.icon />
+                          <span>{item.label}</span>
+                          {(() => {
+                            if (!("badge" in item)) return null;
+                            const badge = item.badge;
+                            if (!badge) return null;
+                            return (
+                              <span className="ml-auto rounded-full bg-[#00acca] px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                                {badge}
+                              </span>
+                            );
+                          })()}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-[11px] font-semibold tracking-widest text-muted-foreground/70">
