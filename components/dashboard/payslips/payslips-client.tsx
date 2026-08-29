@@ -13,6 +13,7 @@ import {
   Plus,
   Printer,
   Search,
+  ShoppingCart,
   Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -216,9 +217,12 @@ const PAYSLIPS_MOCK: PayslipRecord[] = [
     type: "Monthly",
   },
 ];
-
 function formatMoney(n: number): string {
   return `$${n.toLocaleString("en-US")}`;
+}
+
+function formatRp(n: number): string {
+  return `Rp${n.toLocaleString("id-ID")}`;
 }
 
 function getInitials(name: string): string {
@@ -1228,9 +1232,9 @@ export function PayslipsClient() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px] p-0">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4">
             <div>
-              <DialogTitle className="text-base font-semibold text-[#2b2b46]">Payslip</DialogTitle>
+              <DialogTitle className="text-base font-semibold text-[#2b2b46]">Payslip Preview</DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                {pdfRecord?.lastPayrunDate} • {pdfRecord?.employeeId} • {pdfRecord?.type}
+                {pdfRecord?.employee.name} • {pdfRecord?.employeeId} • {pdfRecord?.lastPayrunDate}
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -1238,75 +1242,74 @@ export function PayslipsClient() {
                 <Printer className="size-3.5" />
                 Print
               </Button>
-              <Button
-                size="sm"
-                className="h-8 rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
-                onClick={handlePrintPayslip}
-              >
+              <Button size="sm" className="h-8 rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8]" onClick={handlePrintPayslip}>
                 <FileText className="size-3.5" />
                 Download PDF
               </Button>
             </div>
           </div>
           {pdfRecord ? (
-            <div className="bg-[#f9fafb] p-6">
-              <div className="overflow-hidden rounded-[12px] border border-black/10 bg-white">
-                <div className="flex items-start justify-between border-b px-6 py-5">
-                  <div className="flex gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-[10px] bg-[#2b2b46] text-white">
-                      <span className="text-sm font-bold">S</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold tracking-tight text-[#2b2b46]">SAASDESK</p>
-                      <p className="text-xs text-muted-foreground">Payslip • {pdfRecord.lastPayrunDate}</p>
-                    </div>
+            <div className="bg-white p-8 text-black">
+              <div className="flex flex-col items-center text-center">
+                <div className="flex flex-col items-center text-[#ec4899]">
+                  <ShoppingCart className="size-6" />
+                  <span className="text-[10px] font-semibold tracking-widest">Shopping</span>
+                </div>
+                <h1 className="mt-4 text-xl font-bold tracking-tight">PT Toko Bangun Indonesia</h1>
+                <p className="text-xs">Jl. Contoh No. 45, Jakarta Selatan</p>
+              </div>
+              <div className="mt-8">
+                <p className="text-sm font-bold">Pay Slip for the period of {pdfRecord.lastPayrunDate.replace("30 ", "")}</p>
+                <div className="mt-3 grid grid-cols-2 gap-8 text-xs leading-5">
+                  <div className="space-y-1">
+                    <div className="flex"><span className="w-[140px]">Employee ID</span><span className="w-4">:</span><span>{pdfRecord.employeeId.replace("EMP", "")}</span></div>
+                    <div className="flex"><span className="w-[140px]">Name</span><span className="w-4">:</span><span>{pdfRecord.employee.name}</span></div>
+                    <div className="flex"><span className="w-[140px]">Department</span><span className="w-4">:</span><span>{pdfRecord.department}</span></div>
+                    <div className="flex"><span className="w-[140px]">Designation</span><span className="w-4">:</span><span>Sales Executive</span></div>
+                    <div className="flex"><span className="w-[140px]">Pay Date</span><span className="w-4">:</span><span>27-08-2025</span></div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">Payslip ID</p>
-                    <p className="font-mono text-sm font-medium text-[#2b2b46]">{pdfRecord.employeeId}-SEP26</p>
-                    <span className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[pdfRecord.status]}`}>
-                      {pdfRecord.status}
-                    </span>
+                  <div className="space-y-1">
+                    <div className="flex"><span className="w-[180px]">Date of Joining</span><span className="w-4">:</span><span>01-03-2020</span></div>
+                    <div className="flex"><span className="w-[180px]">No. BPJS Ketenagakerjaan</span><span className="w-4">:</span><span>ID/SA/5678</span></div>
+                    <div className="flex"><span className="w-[180px]">No. BPJS Kesehatan</span><span className="w-4">:</span><span>89</span></div>
+                    <div className="flex"><span className="w-[180px]">Days Worked</span><span className="w-4">:</span><span>22.0</span></div>
+                    <div className="flex"><span className="w-[180px]">Bank Account/Cheque Number</span><span className="w-4">:</span><span>xxxxxxxxxxxx</span></div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-6 bg-[#f9fafb] px-6 py-4 text-sm">
+                <div className="mt-6 grid grid-cols-2 gap-8">
                   <div>
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">Employee</p>
-                    <p className="mt-1 font-semibold text-[#2b2b46]">{pdfRecord.employee.name}</p>
-                    <p className="text-xs text-muted-foreground">{pdfRecord.employee.email}</p>
-                    <p className="mt-2 font-mono text-xs text-[#2b2b46]">{pdfRecord.employeeId} • {pdfRecord.department}</p>
+                    <p className="text-sm font-bold">Earnings</p>
+                    <div className="mt-2 space-y-1 text-xs leading-5">
+                      <div className="flex justify-between"><span>Gaji Pokok</span><span className="font-mono">: {formatRp(12000000)}</span></div>
+                      <div className="flex justify-between"><span>Tunjangan Jabatan</span><span className="font-mono">: {formatRp(6000000)}</span></div>
+                      <div className="flex justify-between"><span>Tunjangan Transportasi</span><span className="font-mono">: {formatRp(2500000)}</span></div>
+                      <div className="flex justify-between"><span>Tunjangan Kesehatan</span><span className="font-mono">: {formatRp(1800000)}</span></div>
+                      <div className="flex justify-between"><span>Tunjangan Perumahan</span><span className="font-mono">: {formatRp(4500000)}</span></div>
+                      <div className="flex justify-between"><span>Uang Makan</span><span className="font-mono">: {formatRp(800000)}</span></div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">Pay Period</p>
-                    <p className="mt-1 font-medium text-[#2b2b46]">{pdfRecord.lastPayrunDate}</p>
-                    <p className="text-xs text-muted-foreground">{pdfRecord.type} • Net Pay</p>
-                    <p className="mt-1 text-lg font-bold text-[#2b2b46]">{formatMoney(pdfRecord.totalNetPay)}</p>
+                  <div>
+                    <p className="text-sm font-bold">Deductions</p>
+                    <div className="mt-2 space-y-1 text-xs leading-5">
+                      <div className="flex justify-between"><span>Pajak Penghasilan (PPh 21)</span><span className="font-mono">: {formatRp(250000)}</span></div>
+                      <div className="flex justify-between"><span>BPJS Ketenagakerjaan</span><span className="font-mono">: {formatRp(1500000)}</span></div>
+                      <div className="flex justify-between"><span>BPJS Kesehatan</span><span className="font-mono">: {formatRp(400000)}</span></div>
+                    </div>
                   </div>
                 </div>
-                <div className="px-6 py-5">
-                  <div className="grid grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Earnings</p>
-                      <div className="space-y-2 rounded-lg border bg-[#f9fafb] p-3">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Basic Salary</span><span className="font-medium text-[#2b2b46]">{formatMoney(Math.round(pdfRecord.totalNetPay * 0.85))}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Allowances</span><span className="font-medium text-[#2b2b46]">{formatMoney(Math.round(pdfRecord.totalNetPay * 0.15) + 800)}</span></div>
-                        <div className="flex justify-between border-t pt-2 font-semibold"><span>Gross Earnings</span><span>{formatMoney(pdfRecord.totalNetPay + 800)}</span></div>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Deductions</p>
-                      <div className="space-y-2 rounded-lg border bg-[#f9fafb] p-3">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span className="font-medium text-[#2b2b46]">{formatMoney(500)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">BPJS & Other</span><span className="font-medium text-[#2b2b46]">{formatMoney(300)}</span></div>
-                        <div className="flex justify-between border-t pt-2 font-semibold"><span>Total Deductions</span><span>{formatMoney(800)}</span></div>
-                      </div>
-                    </div>
+                <div className="my-4 h-px bg-black" />
+                <div className="grid grid-cols-2 gap-8 text-xs leading-5">
+                  <div className="space-y-2">
+                    <div className="flex"><span className="w-[170px] font-bold">Total Earnings (Rounded)</span><span className="w-4">:</span><span className="font-mono"> {formatRp(27600000)}</span></div>
+                    <div className="flex"><span className="w-[170px] font-bold">Take Home Pay</span><span className="w-4">:</span><span className="font-mono"> {formatRp(25450000)}</span></div>
                   </div>
-                  <div className="mt-5 flex items-center justify-between rounded-lg border border-[#2563eb]/20 bg-[#eff6ff] px-4 py-3">
-                    <span className="text-sm font-semibold text-[#1d4ed8]">Net Pay</span>
-                    <span className="text-lg font-bold text-[#1d4ed8]">{formatMoney(pdfRecord.totalNetPay)}</span>
+                  <div>
+                    <div className="flex"><span className="w-[150px] font-bold">Total Deductions</span><span className="w-4">:</span><span className="font-mono"> {formatRp(2150000)}</span></div>
                   </div>
-                  <p className="mt-4 text-center text-xs text-muted-foreground">This is a computer-generated payslip. No signature required.</p>
+                </div>
+                <div className="mt-12 text-right text-xs leading-5">
+                  <p>Jakarta, 20 Agustus 2025</p>
+                  <p className="mt-10 font-bold">Manager</p>
                 </div>
               </div>
             </div>
