@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { AttendanceCard } from "@/components/dashboard/attendance-card";
 import {
   RecentActivity,
@@ -10,10 +11,12 @@ import { NextPayroll } from "@/components/dashboard/next-payroll";
 import { PayrunTable } from "@/components/dashboard/payrun-table";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ReportingSection } from "@/components/dashboard/reporting-section";
+import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { getShellSession } from "@/lib/shell-session";
 import type { TenantId } from "@/lib/types";
 import { reportingRepo } from "@/server/repo/reporting";
+import { CreateWorkspacePrompt } from "./_components/create-workspace-prompt";
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -32,7 +35,7 @@ export default async function DashboardPage({
   if (params.to && dateRegex.test(params.to)) to = params.to;
   const range = from && to && from <= to ? { from, to } : undefined;
 
-  if (session.kind !== "authenticated") {
+  if (session.kind === "noSession") {
     return (
       <div className="space-y-6">
         <div className="flex flex-col gap-1">
@@ -43,6 +46,33 @@ export default async function DashboardPage({
             Sign in to view live reporting data.
           </p>
         </div>
+        <div className="rounded-2xl border bg-white p-6 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            You are not signed in. Please sign in to continue.
+          </p>
+          <Button asChild>
+            <Link href="/login">Sign in</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (session.kind === "noOrg") {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[22px] font-semibold tracking-tight text-[#2b2b46]">
+            Overview
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Welcome back. Here is what is happening with your team today.
+          </p>
+        </div>
+        <CreateWorkspacePrompt
+          name={session.user.name}
+          email={session.user.email}
+        />
       </div>
     );
   }

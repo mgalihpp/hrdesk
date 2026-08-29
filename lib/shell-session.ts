@@ -197,7 +197,47 @@ async function getShellSessionUncached(
     );
 
     const activeOrg = orgSummaries.find((o) => o.id === activeOrganizationId);
-    if (!activeOrg) return { kind: "noOrg", user: shellUser, orgs: [] };
+    if (!activeOrg) {
+      try {
+        const single = await auth.api.getFullOrganization({
+          headers,
+          query: { organizationId: activeOrganizationId },
+        } as unknown as { headers: Headers });
+        if (
+          single &&
+          typeof single === "object" &&
+          "id" in (single as Record<string, unknown>)
+        ) {
+          const org = single as unknown as RawOrg;
+          if (typeof org.id === "string" && org.id === activeOrganizationId) {
+            let plan = "free";
+            try {
+              const tenant = await prisma.tenant.findUnique({
+                where: { tenantId: org.id },
+              });
+              if (tenant?.plan) plan = tenant.plan;
+            } catch {
+              plan = "free";
+            }
+            const fallbackSummary: OrgSummary = {
+              id: org.id,
+              name: org.name,
+              slug: org.slug,
+              logo: org.logo ?? null,
+              role: activeRole,
+              plan,
+            };
+            return {
+              kind: "authenticated",
+              user: shellUser,
+              org: fallbackSummary,
+              orgs: [...orgSummaries, fallbackSummary],
+            };
+          }
+        }
+      } catch {}
+      return { kind: "noOrg", user: shellUser, orgs: [] };
+    }
 
     return {
       kind: "authenticated",
