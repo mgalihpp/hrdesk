@@ -140,7 +140,7 @@ export default async function DashboardLayout({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex items-center gap-2 rounded-xl border-0 bg-white px-2 py-1.5 pr-2.5 text-left hover:bg-muted/50"
+                    className="flex items-center gap-2 rounded-xl border-0 bg-transparent px-2 py-1.5 pr-2.5 text-left hover:bg-muted/50"
                   >
                     <Avatar className="size-8">
                       {user.image ? (

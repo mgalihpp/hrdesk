@@ -130,13 +130,13 @@ type ColumnDef = {
 
 const COLUMNS: ColumnDef[] = [
   { key: "check", label: "" },
-  { key: "employee", label: "EMPLOYEE" },
-  { key: "department", label: "DEPARTMENT" },
-  { key: "date", label: "DATE" },
-  { key: "clockIn", label: "CLOCK-IN" },
-  { key: "clockOut", label: "CLOCK-OUT" },
-  { key: "status", label: "STATUS" },
-  { key: "actions", label: "ACTIONS" },
+  { key: "employee", label: "Employee" },
+  { key: "department", label: "Department" },
+  { key: "date", label: "Date" },
+  { key: "clockIn", label: "Clock In" },
+  { key: "clockOut", label: "Clock Out" },
+  { key: "status", label: "Status" },
+  { key: "actions", label: "Actions" },
 ];
 
 function matchesFilters(
@@ -565,7 +565,7 @@ export function AttendanceClient() {
                 {COLUMNS.slice(1).map((c) => (
                   <TableHead
                     key={c.key}
-                    className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground"
+                    className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground"
                   >
                     {c.label}
                   </TableHead>

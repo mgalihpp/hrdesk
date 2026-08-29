@@ -555,25 +555,25 @@ export function DepartmentsClient() {
                     aria-label="Select all"
                   />
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Department Name
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Department Head
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Location
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Active Employees
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Budget Utilization
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Status
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-xs uppercase tracking-wider text-muted-foreground">
+                <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                   Actions
                 </TableHead>
               </TableRow>
