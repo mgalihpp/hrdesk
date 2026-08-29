@@ -7,10 +7,11 @@ import {
   ChevronRight,
   DollarSign,
   Eye,
-  FileDown,
+  FileText,
   HandCoins,
   Pencil,
   Plus,
+  Printer,
   Search,
   Trash2,
 } from "lucide-react";
@@ -252,6 +253,7 @@ export function PayslipsClient() {
   const [pageSize, setPageSize] = useState(10);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [viewRecord, setViewRecord] = useState<PayslipRecord | null>(null);
+  const [pdfRecord, setPdfRecord] = useState<PayslipRecord | null>(null);
   const [editRecord, setEditRecord] = useState<PayslipRecord | null>(null);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [sortAsc, setSortAsc] = useState(true);
@@ -442,15 +444,8 @@ export function PayslipsClient() {
     setEditRecord(null);
   }
 
-  function handleDownload(r: PayslipRecord) {
-    const csv = `Employee,Employee ID,Department,Last Payrun Date,Total Net Pay,Status\n"${r.employee.name}",${r.employeeId},${r.department},"${r.lastPayrunDate}",${r.totalNetPay},${r.status}\n`;
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `payslip-${r.employeeId}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  function handlePrintPayslip() {
+    window.print();
   }
 
   return (
@@ -757,10 +752,10 @@ export function PayslipsClient() {
                           variant="ghost"
                           size="icon"
                           className="size-7 text-muted-foreground hover:text-foreground"
-                          onClick={() => handleDownload(r)}
-                          aria-label="Download"
+                          onClick={() => setPdfRecord(r)}
+                          aria-label="View payslip PDF"
                         >
-                          <FileDown className="size-3.5" />
+                          <FileText className="size-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -1226,6 +1221,96 @@ export function PayslipsClient() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pdfRecord} onOpenChange={(o) => { if (!o) setPdfRecord(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px] p-0">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4">
+            <div>
+              <DialogTitle className="text-base font-semibold text-[#2b2b46]">Payslip</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                {pdfRecord?.lastPayrunDate} • {pdfRecord?.employeeId} • {pdfRecord?.type}
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8 rounded-lg" onClick={handlePrintPayslip}>
+                <Printer className="size-3.5" />
+                Print
+              </Button>
+              <Button
+                size="sm"
+                className="h-8 rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
+                onClick={handlePrintPayslip}
+              >
+                <FileText className="size-3.5" />
+                Download PDF
+              </Button>
+            </div>
+          </div>
+          {pdfRecord ? (
+            <div className="bg-[#f9fafb] p-6">
+              <div className="overflow-hidden rounded-[12px] border border-black/10 bg-white">
+                <div className="flex items-start justify-between border-b px-6 py-5">
+                  <div className="flex gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-[10px] bg-[#2b2b46] text-white">
+                      <span className="text-sm font-bold">S</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold tracking-tight text-[#2b2b46]">SAASDESK</p>
+                      <p className="text-xs text-muted-foreground">Payslip • {pdfRecord.lastPayrunDate}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">Payslip ID</p>
+                    <p className="font-mono text-sm font-medium text-[#2b2b46]">{pdfRecord.employeeId}-SEP26</p>
+                    <span className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[pdfRecord.status]}`}>
+                      {pdfRecord.status}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-6 bg-[#f9fafb] px-6 py-4 text-sm">
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">Employee</p>
+                    <p className="mt-1 font-semibold text-[#2b2b46]">{pdfRecord.employee.name}</p>
+                    <p className="text-xs text-muted-foreground">{pdfRecord.employee.email}</p>
+                    <p className="mt-2 font-mono text-xs text-[#2b2b46]">{pdfRecord.employeeId} • {pdfRecord.department}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">Pay Period</p>
+                    <p className="mt-1 font-medium text-[#2b2b46]">{pdfRecord.lastPayrunDate}</p>
+                    <p className="text-xs text-muted-foreground">{pdfRecord.type} • Net Pay</p>
+                    <p className="mt-1 text-lg font-bold text-[#2b2b46]">{formatMoney(pdfRecord.totalNetPay)}</p>
+                  </div>
+                </div>
+                <div className="px-6 py-5">
+                  <div className="grid grid-cols-2 gap-6 text-sm">
+                    <div>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Earnings</p>
+                      <div className="space-y-2 rounded-lg border bg-[#f9fafb] p-3">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Basic Salary</span><span className="font-medium text-[#2b2b46]">{formatMoney(Math.round(pdfRecord.totalNetPay * 0.85))}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Allowances</span><span className="font-medium text-[#2b2b46]">{formatMoney(Math.round(pdfRecord.totalNetPay * 0.15) + 800)}</span></div>
+                        <div className="flex justify-between border-t pt-2 font-semibold"><span>Gross Earnings</span><span>{formatMoney(pdfRecord.totalNetPay + 800)}</span></div>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Deductions</p>
+                      <div className="space-y-2 rounded-lg border bg-[#f9fafb] p-3">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span className="font-medium text-[#2b2b46]">{formatMoney(500)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">BPJS & Other</span><span className="font-medium text-[#2b2b46]">{formatMoney(300)}</span></div>
+                        <div className="flex justify-between border-t pt-2 font-semibold"><span>Total Deductions</span><span>{formatMoney(800)}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex items-center justify-between rounded-lg border border-[#2563eb]/20 bg-[#eff6ff] px-4 py-3">
+                    <span className="text-sm font-semibold text-[#1d4ed8]">Net Pay</span>
+                    <span className="text-lg font-bold text-[#1d4ed8]">{formatMoney(pdfRecord.totalNetPay)}</span>
+                  </div>
+                  <p className="mt-4 text-center text-xs text-muted-foreground">This is a computer-generated payslip. No signature required.</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
