@@ -26,6 +26,7 @@ import { getShellSession } from "@/lib/shell-session";
 import type { TenantId } from "@/lib/types";
 import { auditRepo } from "@/server/repo/audit";
 import { employeeRepo } from "@/server/repo/employee";
+import { eventRepo } from "@/server/repo/event";
 import { payRunRepo } from "@/server/repo/payrun";
 import { reportingRepo } from "@/server/repo/reporting";
 import { CreateWorkspacePrompt } from "./_components/create-workspace-prompt";
@@ -94,17 +95,27 @@ export default async function DashboardPage({
   const eRepo = employeeRepo(prisma, tenantId);
   const payRepo = payRunRepo(prisma, tenantId);
   const aRepo = auditRepo(prisma, tenantId);
-  const [overview, series, attendance, payRuns, employeesRaw, pipeline, auditPage, nextPayroll] =
-    await Promise.all([
-      repo.overview(range),
-      repo.getPayrollSeries(range),
-      repo.getAttendance(range),
-      payRepo.listWithTotals(),
-      eRepo.list(),
-      repo.getPipeline(),
-      aRepo.list({ limit: 4 }),
-      payRepo.getNextPayroll(),
-    ]);
+  const [
+    overview,
+    series,
+    attendance,
+    payRuns,
+    employeesRaw,
+    pipeline,
+    auditPage,
+    nextPayroll,
+    events,
+  ] = await Promise.all([
+    repo.overview(range),
+    repo.getPayrollSeries(range),
+    repo.getAttendance(range),
+    payRepo.listWithTotals(),
+    eRepo.list(),
+    repo.getPipeline(),
+    aRepo.list({ limit: 4 }),
+    payRepo.getNextPayroll(),
+    eventRepo(prisma, tenantId).listUpcoming(3),
+  ]);
   const employees: EmployeeTableRow[] = employeesRaw.map((e) => ({
     id: e.id as string,
     firstName: e.firstName,
@@ -152,10 +163,9 @@ export default async function DashboardPage({
           <NextPayroll data={nextPayroll} />
         </div>
       </div>
-
       <div className="grid gap-6 lg:grid-cols-3">
         <RecruitmentOverview pipeline={pipeline} />
-        <UpcomingEvents />
+        <UpcomingEvents events={events} />
         <RecentActivity items={recentActivityItems} />
       </div>
     </div>

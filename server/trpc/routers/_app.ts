@@ -4,6 +4,7 @@ import { auditRouter } from "./audit";
 import { billingRouter } from "./billing";
 import { candidateRouter } from "./candidate";
 import { employeeRouter } from "./employee";
+import { eventRouter } from "./event";
 import { integrationRouter } from "./integration";
 import { jobRouter } from "./job";
 import { meRouter } from "./me";
@@ -27,6 +28,7 @@ export const appRouter = createTRPCRouter({
   integration: integrationRouter,
   reporting: reportingRouter,
   audit: auditRouter,
+  event: eventRouter,
 });
 
 export type AppRouter = typeof appRouter;
