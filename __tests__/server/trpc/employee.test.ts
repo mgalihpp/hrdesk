@@ -127,4 +127,36 @@ describe("employee RBAC", () => {
     const list = await caller.employee.list();
     expect(list).toHaveLength(0);
   });
+
+  it("creates with department fields and validates enum", async () => {
+    const caller = appRouter.createCaller({
+      session: session(["hr"]),
+      prisma: fakePrisma(),
+    });
+    const created = await caller.employee.create({
+      ...sample,
+      department: "Engineering",
+      position: "QA Engineer",
+      employmentType: "Full Time",
+      avatarUrl: "https://example.com/a.png",
+    });
+    expect(created.department).toBe("Engineering");
+    await expect(
+      caller.employee.create({
+        ...sample,
+        email: "other@x.co",
+        department: "InvalidDept" as never,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("defaults remain readable via list after create without dept", async () => {
+    const prisma = fakePrisma();
+    const caller = appRouter.createCaller({ session: session(["hr"]), prisma });
+    const created = await caller.employee.create(sample);
+    expect(created.department).toBe("Engineering");
+    expect(created.position).toBe("Employee");
+    expect(created.employmentType).toBe("Full Time");
+    expect(created.avatarUrl).toBe("");
+  });
 });

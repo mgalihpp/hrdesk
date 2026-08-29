@@ -1,21 +1,8 @@
-export type EmploymentType = "Full Time" | "Contract" | "Part Time" | "Intern";
+import type { Department, EmploymentType } from "@/lib/types";
+
+export type { Department, EmploymentType };
 
 export type EmployeeStatusLabel = "Active" | "On Leave";
-
-export type Department =
-  | "Engineering"
-  | "Marketing"
-  | "Product"
-  | "HR"
-  | "Finance"
-  | "Sales"
-  | "Customer Support"
-  | "Legal"
-  | "Operations"
-  | "Design"
-  | "QA"
-  | "Data";
-
 export type EmployeeDisplay = {
   id: string;
   name: string;

@@ -36,6 +36,10 @@ type StoredEmployee = {
   compensation: number;
   hireDate: string;
   status: string;
+  department?: string | null;
+  position?: string | null;
+  employmentType?: string | null;
+  avatarUrl?: string | null;
   createdAt: Date;
 };
 
@@ -66,6 +70,13 @@ function toEmployeeView(d: StoredEmployee): EmployeeView {
     compensation: d.compensation as EmployeeView["compensation"],
     hireDate: d.hireDate,
     status: d.status as EmployeeView["status"],
+    department:
+      (d.department as EmployeeView["department"] | null) ?? "Engineering",
+    position: d.position ?? "Employee",
+    employmentType:
+      (d.employmentType as EmployeeView["employmentType"] | null) ??
+      "Full Time",
+    avatarUrl: d.avatarUrl ?? "",
     createdAt: new Date(d.createdAt).toISOString(),
   };
 }

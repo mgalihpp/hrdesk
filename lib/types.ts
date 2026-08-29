@@ -125,6 +125,22 @@ export interface Leave {
 
 export type EmployeeStatus = "active" | "on_leave" | "terminated";
 
+export type EmploymentType = "Full Time" | "Part Time" | "Contract" | "Intern";
+
+export type Department =
+  | "Engineering"
+  | "Marketing"
+  | "Product"
+  | "HR"
+  | "Finance"
+  | "Sales"
+  | "Customer Support"
+  | "Legal"
+  | "Operations"
+  | "Design"
+  | "QA"
+  | "Data";
+
 export interface Employee {
   id: EmployeeId;
   tenantId: TenantId;
@@ -136,6 +152,10 @@ export interface Employee {
   compensation: Cents;
   hireDate: string;
   status: EmployeeStatus;
+  department: Department;
+  position: string;
+  employmentType: EmploymentType;
+  avatarUrl: string;
   createdAt: string;
 }
 
@@ -150,6 +170,10 @@ export interface EmployeeView {
   compensation: Cents;
   hireDate: string;
   status: EmployeeStatus;
+  department: Department;
+  position: string;
+  employmentType: EmploymentType;
+  avatarUrl: string;
   createdAt: string;
 }
 export interface TenantSettings {

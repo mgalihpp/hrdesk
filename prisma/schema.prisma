@@ -130,17 +130,21 @@ model Tenant {
   updatedAt       DateTime @default(now())
 }
 model Employee {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  tenantId     String
-  firstName    String
-  lastName     String
-  email        String
-  ssnEnc       String
-  bankEnc      String
-  compensation Int
-  hireDate     String
-  status       String   @default("active")
-  createdAt    DateTime @default(now())
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId       String
+  firstName      String
+  lastName       String
+  email          String
+  ssnEnc         String
+  bankEnc        String
+  compensation   Int
+  hireDate       String
+  status         String   @default("active")
+  department     String?  @default("Engineering")
+  position       String?  @default("Employee")
+  employmentType String?  @default("Full Time")
+  avatarUrl      String?  @default("")
+  createdAt      DateTime @default(now())
 
   @@index([tenantId])
   @@unique([tenantId, email])
