@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpDown,
   ChevronLeft,
@@ -16,8 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
+import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,8 +53,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePayrollStore } from "@/lib/stores/payroll-store";
-import { useTRPC } from "@/lib/trpc/react";
+import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 export type PayrollStatus =
   | "Paid"
@@ -165,7 +163,6 @@ export function PayrollClient({
 }) {
   const router = useRouter();
   const [records, setRecords] = useState<PayrollRecord[]>(initialRecords);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -198,6 +195,40 @@ export function PayrollClient({
     deductions: "1400",
     status: "Paid" as PayrollStatus,
   });
+
+  const queryClient = useQueryClient();
+
+  const createPayrun = trpc.payrun.create.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      router.refresh();
+    },
+    onError: (err) => {
+      if (err.data?.code === "FORBIDDEN")
+        setError("You do not have permission to run payroll.");
+      else if (
+        err.message.includes("idempotency") ||
+        err.message.includes("duplicate") ||
+        err.message.includes("already exists")
+      )
+        setError("Pay run already exists for this period.");
+      else setError(err.message);
+    },
+  });
+
+  const lockPayrun = trpc.payrun.lock.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      router.refresh();
+    },
+    onError: (err) => {
+      if (err.data?.code === "FORBIDDEN")
+        setError("You do not have permission to edit payroll records.");
+      else setError(err.message);
+    },
+  });
+
+  const submitting = createPayrun.isPending || lockPayrun.isPending;
 
   const filtered = useMemo(() => {
     const base = records.filter((r) =>
@@ -274,110 +305,59 @@ export function PayrollClient({
     });
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     setError(null);
-    setSubmitting(true);
     setRecords((prev) => prev.filter((r) => r.id !== id));
     setSelected((prev) => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
-    try {
-      const res = await fetch("/api/trpc/payrun.remove", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (res.status === 404) {
-        router.refresh();
-        return;
-      }
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          setError("You do not have permission to delete payroll records.");
-        } else if (text) {
-          setError(text);
-        }
-        router.refresh();
-        return;
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    queryClient.invalidateQueries();
+    router.refresh();
   }
-  async function handleRun(e: React.FormEvent) {
+
+  function handleRun(e: React.FormEvent) {
     e.preventDefault();
     if (!runForm.name.trim() || !runForm.email.trim()) return;
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/payrun.create", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          periodStart: "2026-10-01",
-          periodEnd: "2026-10-31",
-          entityId: "default",
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          throw new Error("You do not have permission to run payroll.");
-        }
-        if (
-          text.includes("idempotency") ||
-          text.includes("duplicate") ||
-          text.includes("already exists")
-        ) {
-          throw new Error("Pay run already exists for this period.");
-        }
-        throw new Error(text || "Failed to create pay run");
-      }
-      // optimistic local add for immediate feedback + server refresh
-      const base = Number(runForm.baseSalary) || 0;
-      const allow = Number(runForm.allowances) || 0;
-      const deduct = Number(runForm.deductions) || 0;
-      const net = base + allow - deduct;
-      const newRecord: PayrollRecord = {
-        id: `pr-${Date.now()}`,
-        employee: {
-          name: runForm.name.trim(),
-          email: runForm.email.trim(),
-          avatar: "",
-        },
-        employmentType: runForm.employmentType,
-        period: runForm.period,
-        baseSalary: base,
-        allowances: allow,
-        deductions: deduct,
-        netPay: net,
-        status: runForm.status,
-      };
-      setRecords((prev) => [newRecord, ...prev]);
-      setRunOpen(false);
-      setRunForm({
-        name: "",
-        email: "",
-        employmentType: "Salaried",
-        period: "Oct 2026",
-        baseSalary: "6500",
-        allowances: "800",
-        deductions: "1400",
-        status: "Paid",
-      });
-      setPage(1);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    const base = Number(runForm.baseSalary) || 0;
+    const allow = Number(runForm.allowances) || 0;
+    const deduct = Number(runForm.deductions) || 0;
+    const net = base + allow - deduct;
+    const newRecord: PayrollRecord = {
+      id: `pr-${Date.now()}`,
+      employee: {
+        name: runForm.name.trim(),
+        email: runForm.email.trim(),
+        avatar: "",
+      },
+      employmentType: runForm.employmentType,
+      period: runForm.period,
+      baseSalary: base,
+      allowances: allow,
+      deductions: deduct,
+      netPay: net,
+      status: runForm.status,
+    };
+    setRecords((prev) => [newRecord, ...prev]);
+    setRunOpen(false);
+    setRunForm({
+      name: "",
+      email: "",
+      employmentType: "Salaried",
+      period: "Oct 2026",
+      baseSalary: "6500",
+      allowances: "800",
+      deductions: "1400",
+      status: "Paid",
+    });
+    setPage(1);
+    createPayrun.mutate({
+      periodStart: "2026-10-01",
+      periodEnd: "2026-10-31",
+      entityId: "default",
+    });
   }
 
   function openEdit(r: PayrollRecord) {
@@ -394,19 +374,19 @@ export function PayrollClient({
     });
   }
 
-  async function handleEdit(e: React.FormEvent) {
+  function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editRecord) return;
     setError(null);
-    setSubmitting(true);
     const base = Number(editForm.baseSalary) || 0;
     const allow = Number(editForm.allowances) || 0;
     const deduct = Number(editForm.deductions) || 0;
     const net = base + allow - deduct;
-    // optimistic local update
+    const editingId = editRecord.id;
+    const nextStatus = editForm.status;
     setRecords((prev) =>
       prev.map((r) =>
-        r.id === editRecord.id
+        r.id === editingId
           ? {
               ...r,
               employee: {
@@ -420,48 +400,17 @@ export function PayrollClient({
               allowances: allow,
               deductions: deduct,
               netPay: net,
-              status: editForm.status,
+              status: nextStatus,
             }
           : r,
       ),
     );
-    const editingId = editRecord.id;
     setEditRecord(null);
-    try {
-      // Attempt update via payrun.lock if marking Paid, otherwise generic update if available
-      if (editForm.status === "Paid") {
-        const res = await fetch("/api/trpc/payrun.lock", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: editingId }),
-        });
-        if (res.status !== 404 && !res.ok) {
-          const text = await res.text();
-          if (res.status === 403 || text.includes("FORBIDDEN")) {
-            setError("You do not have permission to edit payroll records.");
-          } else if (text) {
-            setError(text);
-          }
-        }
-      } else {
-        // try generic update endpoint if exists (idempotent no-op if 404)
-        const res = await fetch("/api/trpc/payrun.update", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: editingId }),
-        });
-        if (res.status !== 404 && !res.ok) {
-          const text = await res.text();
-          if (res.status === 403 || text.includes("FORBIDDEN")) {
-            setError("You do not have permission to edit payroll records.");
-          }
-        }
-      }
+    if (nextStatus === "Paid") {
+      lockPayrun.mutate({ id: editingId });
+    } else {
+      queryClient.invalidateQueries();
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
     }
   }
 

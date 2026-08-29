@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { reportingRepo } from "@/server/repo/reporting";
 import { createTRPCRouter, protectedProcedure } from "../init";
@@ -13,7 +14,7 @@ const rangeSchema = z
 
 function validateRange(range: { from: string; to: string } | undefined) {
   if (range && range.from > range.to) {
-    throw new Error("from must be <= to");
+    throw new TRPCError({ code: "BAD_REQUEST", message: "from must be <= to" });
   }
   return range;
 }

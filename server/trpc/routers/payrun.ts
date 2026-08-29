@@ -31,7 +31,10 @@ export const payrunRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       if (input.periodStart > input.periodEnd) {
-        throw new Error("periodStart must be <= periodEnd");
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "periodStart must be <= periodEnd",
+        });
       }
       const empRepo = employeeRepo(ctx.prisma, ctx.session.tenantId);
       let employees = await empRepo.list();
@@ -72,7 +75,10 @@ export const payrunRouter = createTRPCRouter({
         (e) => !excludedByUnpaidLeave.has(e.id as string),
       );
       if (employees.length === 0) {
-        throw new Error("No eligible employees for pay run");
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No eligible employees for pay run",
+        });
       }
       const timeSummary = {
         approvedTimeEntries: approvedTimeEntries.length,
@@ -123,7 +129,7 @@ export const payrunRouter = createTRPCRouter({
       const repo = payRunRepo(ctx.prisma, ctx.session.tenantId);
       const row = await repo.getById(input.id as never);
       if (!row) {
-        throw new Error("PayRun not found");
+        throw new TRPCError({ code: "NOT_FOUND", message: "PayRun not found" });
       }
       const payslips = await repo.getPayslips(input.id as never);
       const timeRepo = timeEntryRepo(ctx.prisma, ctx.session.tenantId);

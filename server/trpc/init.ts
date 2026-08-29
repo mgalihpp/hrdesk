@@ -1,20 +1,37 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import superjson from "superjson";
+import { ZodError } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Role, TenantId, TRPCContext } from "@/lib/types";
 
-const t = initTRPC.context<TRPCContext>().create({ transformer: superjson });
+const t = initTRPC.context<TRPCContext>().create({
+  transformer: superjson,
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === "BAD_REQUEST" && error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      },
+    };
+  },
+});
 
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 export const publicProcedure = t.procedure;
 
-export const createTRPCContext = async ({
-  headers,
-}: {
-  headers: Headers;
-}): Promise<TRPCContext> => {
+export const createTRPCContext = async (
+  opts: FetchCreateContextFnOptions | { headers: Headers },
+): Promise<TRPCContext> => {
+  const headers =
+    (opts as FetchCreateContextFnOptions).req?.headers ??
+    (opts as { headers: Headers }).headers;
   const s = await auth.api.getSession({ headers });
   if (!s?.session) return { session: null, prisma };
   const tenantId = s.session.activeOrganizationId;

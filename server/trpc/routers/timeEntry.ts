@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { Role } from "@/lib/types";
 import { leaveRepo } from "@/server/repo/leave";
@@ -50,7 +51,11 @@ export const timeEntryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const repo = timeEntryRepo(ctx.prisma, ctx.session.tenantId);
       const row = await repo.getById(input.id as never);
-      if (!row) throw new Error("TimeEntry not found");
+      if (!row)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "TimeEntry not found",
+        });
       return row;
     }),
 
@@ -125,7 +130,8 @@ export const leaveRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const repo = leaveRepo(ctx.prisma, ctx.session.tenantId);
       const row = await repo.getById(input.id as never);
-      if (!row) throw new Error("Leave not found");
+      if (!row)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Leave not found" });
       return row;
     }),
 
