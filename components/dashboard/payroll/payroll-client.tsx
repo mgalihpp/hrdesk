@@ -4,7 +4,6 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   CreditCard,
   DollarSign,
   Ellipsis,
@@ -14,7 +13,6 @@ import {
   Plus,
   Search,
   Trash2,
-  Wallet,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -627,7 +625,8 @@ export function PayrollClient() {
           </div>
         </Card>
         <Card className="relative overflow-hidden rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-          <div className="flex items-start justify-between">
+          <FileText className="pointer-events-none absolute right-4 top-4 size-10 opacity-5" />
+          <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                 Pending Approvals
@@ -635,23 +634,18 @@ export function PayrollClient() {
               <p className="mt-1 text-[22px] font-semibold leading-none text-[#2b2b46]">
                 {pendingCount}
               </p>
-            </div>
-            <div className="flex size-9 items-center justify-center rounded-full border bg-gray-50 text-muted-foreground">
-              <Clock3 className="size-5" />
-            </div>
-          </div>
-          <span className="mt-2 inline-flex w-fit rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-            {pendingCount} for final signature
-          </span>
-          <div className="mt-3 flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="size-2 rounded-full bg-red-500" />
-                {pendingCount} Pending
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="size-2 rounded-full bg-emerald-500" />
-                {processedCount} Processed
+              <span className="mt-3 inline-flex w-fit rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                {pendingCount} for final signature
+              </span>
+              <div className="mt-3 space-y-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="size-2 rounded-full bg-red-500" />
+                  {pendingCount} Pending
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  {processedCount} Processed
+                </div>
               </div>
             </div>
             <div className="relative flex size-[96px] shrink-0 items-center justify-center">
@@ -707,33 +701,29 @@ export function PayrollClient() {
         </Card>
 
         <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                Average Salary
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              Average Salary
+            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <p className="text-[22px] font-semibold leading-none text-[#2b2b46]">
+                {formatMoney(avgSalary)}
               </p>
-              <div className="mt-1 flex items-center gap-2">
-                <p className="text-[22px] font-semibold leading-none text-[#2b2b46]">
-                  {formatMoney(avgSalary)}
-                </p>
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                  Top band: $10k+
-                </span>
-              </div>
-            </div>
-            <div className="flex size-9 items-center justify-center rounded-full border bg-gray-50 text-muted-foreground">
-              <Wallet className="size-5" />
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                Top band: $10k+
+              </span>
             </div>
           </div>
           <div className="mt-4 flex h-14 items-end gap-1.5">
-            {bucketConfig.map((b, idx) => (
-              <div className="flex h-full flex-1 flex-col justify-end items-center gap-1">
+            {bucketConfig.map((b) => (
+              <div
+                key={b.label}
+                className="flex h-full flex-1 flex-col justify-end items-center gap-1"
+              >
                 <div
                   className={cn(
                     "w-full rounded-t-md",
-                    idx === bucketConfig.length - 1
-                      ? "bg-[#2b2b46]"
-                      : "bg-[#dbeafe]",
+                    b.label === "$10k+" ? "bg-[#2b2b46]" : "bg-[#dbeafe]",
                   )}
                   style={{ height: b.height }}
                 />
