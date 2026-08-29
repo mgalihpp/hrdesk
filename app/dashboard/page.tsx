@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { getShellSession } from "@/lib/shell-session";
 import type { TenantId } from "@/lib/types";
+import { payRunRepo } from "@/server/repo/payrun";
 import { reportingRepo } from "@/server/repo/reporting";
 import { CreateWorkspacePrompt } from "./_components/create-workspace-prompt";
 
@@ -79,10 +80,12 @@ export default async function DashboardPage({
 
   const tenantId = session.user.tenantId as TenantId;
   const repo = reportingRepo(prisma, tenantId);
-  const [overview, series, attendance] = await Promise.all([
+  const payRepo = payRunRepo(prisma, tenantId);
+  const [overview, series, attendance, payRuns] = await Promise.all([
     repo.overview(range),
     repo.getPayrollSeries(range),
     repo.getAttendance(range),
+    payRepo.listWithTotals(),
   ]);
 
   return (
@@ -96,7 +99,7 @@ export default async function DashboardPage({
 
       <AttendanceCard attendance={attendance} />
 
-      <PayrunTable />
+      <PayrunTable payRuns={payRuns} />
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
         <EmployeeTable />

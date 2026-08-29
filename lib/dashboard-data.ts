@@ -64,55 +64,6 @@ export const PAYROLL_SERIES: PayrollPoint[] = [
   { month: "Feb", gross: 842, net: 632 },
 ];
 
-export type PayRun = {
-  id: string;
-  period: string;
-  date: string;
-  employees: number;
-  gross: string;
-  net: string;
-  status: "Paid" | "Processing" | "Scheduled";
-};
-
-export const PAY_RUNS: PayRun[] = [
-  {
-    id: "PR-2026-02",
-    period: "Feb 16–28, 2026",
-    date: "Feb 28",
-    employees: 3248,
-    gross: "$842,500",
-    net: "$632,100",
-    status: "Paid",
-  },
-  {
-    id: "PR-2026-01B",
-    period: "Feb 01–15, 2026",
-    date: "Feb 15",
-    employees: 3221,
-    gross: "$836,200",
-    net: "$627,400",
-    status: "Paid",
-  },
-  {
-    id: "PR-2026-01A",
-    period: "Jan 16–31, 2026",
-    date: "Jan 31",
-    employees: 3204,
-    gross: "$828,900",
-    net: "$621,800",
-    status: "Paid",
-  },
-  {
-    id: "PR-2026-03",
-    period: "Mar 01–15, 2026",
-    date: "Mar 15",
-    employees: 3248,
-    gross: "$845,000",
-    net: "$633,900",
-    status: "Scheduled",
-  },
-];
-
 export type Employee = {
   id: string;
   name: string;
