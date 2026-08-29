@@ -715,7 +715,7 @@ export function PayrollClient() {
             {bucketConfig.map((b, idx) => (
               <div
                 key={b.label}
-                className="flex flex-1 flex-col items-center gap-1"
+                className="flex h-full flex-1 flex-col justify-end items-center gap-1"
               >
                 <div
                   className={cn(
