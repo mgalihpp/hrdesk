@@ -578,7 +578,7 @@ export function CandidatesClient() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="flex items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+        <Card className="flex flex-row items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <div className="flex size-10 items-center justify-center rounded-xl bg-[#eef2ff] text-[#4f46e5] shrink-0">
             <Users className="size-5" />
           </div>
@@ -595,7 +595,7 @@ export function CandidatesClient() {
             </p>
           </div>
         </Card>
-        <Card className="flex items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+        <Card className="flex flex-row items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <div className="flex size-10 items-center justify-center rounded-xl bg-[#e6fbff] text-[#00acca] shrink-0">
             <ClipboardCheck className="size-5" />
           </div>
@@ -611,7 +611,7 @@ export function CandidatesClient() {
             </p>
           </div>
         </Card>
-        <Card className="flex items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+        <Card className="flex flex-row items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <div className="flex size-10 items-center justify-center rounded-xl bg-[#fff3e6] text-amber-600 shrink-0">
             <CalendarDays className="size-5" />
           </div>
@@ -627,7 +627,7 @@ export function CandidatesClient() {
             </p>
           </div>
         </Card>
-        <Card className="flex items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+        <Card className="flex flex-row items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <div className="flex size-10 items-center justify-center rounded-xl bg-[#e6fff0] text-emerald-600 shrink-0">
             <Tag className="size-5" />
           </div>
