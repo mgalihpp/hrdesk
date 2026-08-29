@@ -66,7 +66,7 @@ const NAV_GROUPS = [
       {
         label: "Leave Requests",
         icon: CalendarClock,
-        href: "/dashboard#leave",
+        href: "/dashboard/leave-requests",
       },
     ],
   },
