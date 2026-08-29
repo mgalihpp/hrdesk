@@ -233,6 +233,20 @@ model Leave {
   @@map("leave")
 }
 
+model Event {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId  String
+  title     String
+  location  String?
+  startAt   DateTime
+  endAt     DateTime?
+  type      String   @default("meeting")
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, startAt])
+  @@map("event")
+}
+
 model Job {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   tenantId    String
