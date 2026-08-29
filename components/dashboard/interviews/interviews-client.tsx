@@ -88,19 +88,19 @@ const STATUS_STYLE: Record<
   { label: string; className: string }
 > = {
   feedback_needed: {
-    label: "Feedback Diperlukan",
+    label: "Feedback Required",
     className: "bg-[#fffbeb] text-amber-700 border-amber-200",
   },
   completed: {
-    label: "Selesai",
+    label: "Completed",
     className: "bg-[#f0fdf4] text-green-700 border-green-200",
   },
   in_progress: {
-    label: "Sedang Berlangsung",
+    label: "In Progress",
     className: "bg-[#fffbeb] text-amber-700 border-amber-200",
   },
   scheduled: {
-    label: "Terjadwal",
+    label: "Scheduled",
     className: "bg-[#f0fdf4] text-green-700 border-green-200",
   },
 };
@@ -110,15 +110,15 @@ const UPCOMING_BADGE: Record<
   { label: string; className: string }
 > = {
   next: {
-    label: "Next 2 day",
+    label: "Next 2 days",
     className: "bg-[#fffbeb] text-amber-700 border-amber-200",
   },
   completed: {
-    label: "Selesai",
+    label: "Completed",
     className: "bg-[#f0fdf4] text-green-700 border-green-200",
   },
   scheduled: {
-    label: "Terjadwal",
+    label: "Scheduled",
     className: "bg-[#f0fdf4] text-green-700 border-green-200",
   },
 };
@@ -198,7 +198,7 @@ const MOCK_UPCOMING: UpcomingItem[] = [
     id: "up-1",
     name: "Sarah Wijaya",
     role: "Product Manager",
-    statusText: "Next 2 day",
+    statusText: "Next 2 days",
     statusKind: "next",
     position: "Product Manager",
     source: "LinkedIn",
@@ -208,7 +208,7 @@ const MOCK_UPCOMING: UpcomingItem[] = [
     id: "up-2",
     name: "John Smith",
     role: "Frontend Dev",
-    statusText: "Selesai",
+    statusText: "Completed",
     statusKind: "completed",
     position: "Frontend Dev",
     source: "Referral",
@@ -218,7 +218,7 @@ const MOCK_UPCOMING: UpcomingItem[] = [
     id: "up-3",
     name: "Jane Doe",
     role: "Marketing Lead",
-    statusText: "Terjadwal",
+    statusText: "Scheduled",
     statusKind: "scheduled",
     position: "Marketing Lead",
     source: "Direct",
@@ -228,7 +228,7 @@ const MOCK_UPCOMING: UpcomingItem[] = [
     id: "up-4",
     name: "Mike Ross",
     role: "UX Designer",
-    statusText: "Terjadwal",
+    statusText: "Scheduled",
     statusKind: "scheduled",
     position: "UX Designer",
     source: "Referral",
@@ -238,7 +238,7 @@ const MOCK_UPCOMING: UpcomingItem[] = [
     id: "up-5",
     name: "Mike Ross",
     role: "UX Designer",
-    statusText: "Terjadwal",
+    statusText: "Scheduled",
     statusKind: "scheduled",
     position: "UX Designer",
     source: "Referral",
@@ -419,10 +419,10 @@ export function InterviewsClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-[22px] font-semibold tracking-tight text-[#2b2b46]">
-            Manajemen Wawancara, Galih 👋
+            Interview Management
           </h1>
           <p className="text-sm text-muted-foreground">
-            Kelola dan lacak jadwal serta feedback wawancara.
+            Manage and track interview schedules and feedback.
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-sm text-[#2b2b46] shadow-sm">
@@ -438,14 +438,14 @@ export function InterviewsClient({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              Wawancara Hari Ini
+              Interviews Today
             </p>
             <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
               {interviews.length}
             </p>
             <p className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
               <ArrowUp className="size-3" />
-              10% vs kemarin
+              10% vs yesterday
             </p>
           </div>
         </Card>
@@ -455,12 +455,12 @@ export function InterviewsClient({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              Total Wawancara Terjadwal
+              Total Scheduled Interviews
             </p>
             <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
               35
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">Bulan ini</p>
+            <p className="mt-1 text-xs text-muted-foreground">This month</p>
           </div>
         </Card>
         <Card className="flex flex-row items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
@@ -469,12 +469,12 @@ export function InterviewsClient({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              Feedback Tertunda
+              Pending Feedback
             </p>
             <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
               12
             </p>
-            <p className="mt-1 text-xs text-amber-600">Perlu tindak lanjut</p>
+            <p className="mt-1 text-xs text-amber-600">Needs follow-up</p>
           </div>
         </Card>
         <Card className="flex flex-row items-center gap-4 rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
@@ -483,14 +483,12 @@ export function InterviewsClient({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-              Pewawancara Aktif
+              Active Interviewers
             </p>
             <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
               6
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Terlibat hari ini
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Active today</p>
           </div>
         </Card>
       </div>
@@ -504,7 +502,7 @@ export function InterviewsClient({
       <Card className="overflow-hidden rounded-[16px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
         <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
           <h2 className="text-[16px] font-semibold text-[#2b2b46]">
-            Jadwal Wawancara Hari Ini
+            Today&apos;s Interview Schedule
           </h2>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={jobFilter} onValueChange={setJobFilter}>
@@ -561,25 +559,25 @@ export function InterviewsClient({
                     />
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
-                    Kandidat
+                    Candidate
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
-                    Posisi
+                    Position
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
-                    Waktu
+                    Time
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
-                    Jenis Wawancara
+                    Interview Type
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
-                    Pewawancara
+                    Interviewer
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-xs font-medium tracking-wider text-muted-foreground">
                     Status
                   </TableHead>
                   <TableHead className="whitespace-nowrap text-right text-xs font-medium tracking-wider text-muted-foreground">
-                    Aksi
+                    Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -596,7 +594,7 @@ export function InterviewsClient({
                       colSpan={8}
                       className="py-10 text-center text-sm text-muted-foreground"
                     >
-                      Tidak ada jadwal wawancara untuk filter ini.
+                      No interviews found for this filter.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -683,7 +681,7 @@ export function InterviewsClient({
                                 <DropdownMenuItem
                                   onClick={() => handleRowClick(r)}
                                 >
-                                  Lihat Detail
+                                  View Details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => {
@@ -692,7 +690,7 @@ export function InterviewsClient({
                                     setOpen(true);
                                   }}
                                 >
-                                  Tandai Selesai
+                                  Mark as Completed
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => {
@@ -701,7 +699,7 @@ export function InterviewsClient({
                                     setOpen(true);
                                   }}
                                 >
-                                  Tandai Terjadwal
+                                  Mark as Scheduled
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -720,12 +718,12 @@ export function InterviewsClient({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <h3 className="text-[15px] font-semibold text-[#2b2b46]">
-            Wawancara Mendatang
+            Upcoming Interviews
           </h3>
           <div className="mt-4 flex flex-col divide-y divide-border">
             {filteredUpcoming.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
-                Tidak ada wawancara mendatang.
+                No upcoming interviews.
               </p>
             ) : (
               filteredUpcoming.map((u) => {
@@ -772,7 +770,7 @@ export function InterviewsClient({
 
         <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <h3 className="text-[15px] font-semibold text-[#2b2b46]">
-            Tinjauan Feedback Terbaru
+            Latest Feedback Reviews
           </h3>
           <div className="mt-4 flex flex-col divide-y divide-border">
             {MOCK_FEEDBACK.map((f) => (
@@ -812,10 +810,10 @@ export function InterviewsClient({
         <DialogContent className="sm:max-w-[520px] bg-white">
           <DialogHeader>
             <DialogTitle className="text-[#2b2b46]">
-              Detail Wawancara
+              Interview Details
             </DialogTitle>
             <DialogDescription>
-              Kelola status dan feedback wawancara kandidat.
+              Manage candidate interview status and feedback.
             </DialogDescription>
           </DialogHeader>
           {selected && (
@@ -842,19 +840,19 @@ export function InterviewsClient({
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-muted-foreground">Waktu</p>
+                  <p className="text-xs text-muted-foreground">Time</p>
                   <p className="font-medium text-[#2b2b46]">{selected.time}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    Jenis Wawancara
+                    Interview Type
                   </p>
                   <p className="font-medium text-[#2b2b46]">
                     {selected.interviewType}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Pewawancara</p>
+                  <p className="text-xs text-muted-foreground">Interviewer</p>
                   <p className="font-medium text-[#2b2b46]">
                     {selected.interviewer}
                   </p>
@@ -870,13 +868,11 @@ export function InterviewsClient({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="feedback_needed">
-                        Feedback Diperlukan
+                        Feedback Required
                       </SelectItem>
-                      <SelectItem value="completed">Selesai</SelectItem>
-                      <SelectItem value="in_progress">
-                        Sedang Berlangsung
-                      </SelectItem>
-                      <SelectItem value="scheduled">Terjadwal</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -885,10 +881,10 @@ export function InterviewsClient({
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Tutup
+              Close
             </Button>
             <Button onClick={handleSave} disabled={isPending}>
-              {isPending ? "Menyimpan..." : "Simpan Feedback"}
+              {isPending ? "Saving..." : "Save Feedback"}
             </Button>
           </DialogFooter>
         </DialogContent>

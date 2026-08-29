@@ -371,7 +371,7 @@ export function CandidatesClient({
     onSuccess: () => {
       setCreateOpen(false);
       setCreateForm({
-        jobId: initialJobs[0]?.id as unknown as string ?? "",
+        jobId: (initialJobs[0]?.id as unknown as string) ?? "",
         firstName: "",
         lastName: "",
         email: "",
@@ -382,7 +382,9 @@ export function CandidatesClient({
     },
     onError: (e) =>
       setError(
-        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission."
+          : e.message,
       ),
   });
 
@@ -399,7 +401,9 @@ export function CandidatesClient({
     },
     onError: (e) =>
       setError(
-        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission."
+          : e.message,
       ),
   });
 
@@ -413,7 +417,9 @@ export function CandidatesClient({
     },
     onError: (e) =>
       setError(
-        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission."
+          : e.message,
       ),
   });
 
@@ -490,7 +496,7 @@ export function CandidatesClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-[22px] font-semibold tracking-tight text-[#2b2b46]">
-            Candidate Management, Galih 👋
+            Candidate Management
           </h1>
           <p className="text-sm text-muted-foreground">
             Manage and track candidate profiles.
