@@ -170,15 +170,3 @@ export const EMPLOYEES: Employee[] = [
     comp: "$76,400",
   },
 ];
-
-export type AttendanceBreakdown = {
-  label: string;
-  value: number;
-  color: string;
-};
-export const ATTENDANCE: AttendanceBreakdown[] = [
-  { label: "Present", value: 78, color: "#00acca" },
-  { label: "Remote", value: 16, color: "#2b2b46" },
-  { label: "On Leave", value: 4, color: "#f4d4eb" },
-  { label: "Absent", value: 2, color: "#ffd6a8" },
-];
