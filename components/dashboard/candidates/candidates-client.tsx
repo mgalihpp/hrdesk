@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  ArrowUp,
   Calendar,
   CalendarDays,
   ClipboardCheck,
+  GripVertical,
   Tag,
   Users,
 } from "lucide-react";
@@ -332,21 +334,25 @@ const MOCK_CANDIDATES: CandidateDisplay[] = [
 const RECENT_ACTIVITY = [
   {
     title: "Jane Doe moved to Screening",
+    name: "Jane Doe",
     time: "2h ago",
     color: "bg-[#2b7fff]",
   },
   {
     title: "Sarah Wijaya scheduled interview",
+    name: "Sarah Wijaya",
     time: "5h ago",
     color: "bg-[#00acca]",
   },
   {
     title: "Aisha Khan submitted application",
+    name: "Aisha Khan",
     time: "1 day ago",
     color: "bg-[#f59e0b]",
   },
   {
     title: "Offer sent to Emma Davis",
+    name: "Emma Davis",
     time: "2 days ago",
     color: "bg-emerald-500",
   },
@@ -439,6 +445,8 @@ export function CandidatesClient() {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [recruiterFilter, setRecruiterFilter] = useState("all");
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] =
+    useState<CandidateStageColumn | null>(null);
   const [selected, setSelected] = useState<CandidateDisplay | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -518,13 +526,18 @@ export function CandidatesClient() {
   function handleDrop(target: CandidateStageColumn) {
     if (!draggedId) return;
     const dragged = candidates.find((c) => c.id === draggedId);
-    if (!dragged) return;
+    if (!dragged) {
+      setDragOverColumn(null);
+      return;
+    }
     if (dragged.stage === target) {
       setDraggedId(null);
+      setDragOverColumn(null);
       return;
     }
     if (!canTransition(dragged.stage, target as CandidateStage)) {
       setDraggedId(null);
+      setDragOverColumn(null);
       return;
     }
     setCandidates((prev) =>
@@ -533,6 +546,7 @@ export function CandidatesClient() {
       ),
     );
     setDraggedId(null);
+    setDragOverColumn(null);
   }
 
   function moveStage(id: string, to: CandidateStage) {
@@ -564,65 +578,89 @@ export function CandidatesClient() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="flex items-center gap-3 rounded-[16px] border bg-white p-4">
-          <div className="flex size-10 items-center justify-center rounded-full bg-[#e6fbff] text-[#00acca]">
-            <Users className="size-5" />
+        <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+          <div className="flex items-start justify-between">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#eef2ff] text-[#4f46e5]">
+              <Users className="size-5" />
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground">Total Candidates</p>
-            <p className="text-[20px] font-bold leading-none text-[#2b2b46]">
+          <div className="mt-3">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              Total Candidates
+            </p>
+            <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
               2,540
             </p>
-            <p className="text-[11px] font-medium text-emerald-600">
-              ↑ 3.1% vs last month
+            <p className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
+              <ArrowUp className="size-3" />
+              3.1% vs last month
             </p>
           </div>
         </Card>
-        <Card className="flex items-center gap-3 rounded-[16px] border bg-white p-4">
-          <div className="flex size-10 items-center justify-center rounded-full bg-[#e6fbff] text-[#00acca]">
-            <ClipboardCheck className="size-5" />
+        <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+          <div className="flex items-start justify-between">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#e6fbff] text-[#00acca]">
+              <ClipboardCheck className="size-5" />
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground">Active Applications</p>
-            <p className="text-[20px] font-bold leading-none text-[#2b2b46]">
+          <div className="mt-3">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              Active Applications
+            </p>
+            <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
               {totalCounts.applied + totalCounts.screening}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Across applied and screening
+            </p>
           </div>
         </Card>
-        <Card className="flex items-center gap-3 rounded-[16px] border bg-white p-4">
-          <div className="flex size-10 items-center justify-center rounded-full bg-[#e6fff0] text-emerald-600">
-            <CalendarDays className="size-5" />
+        <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+          <div className="flex items-start justify-between">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#fff3e6] text-amber-600">
+              <CalendarDays className="size-5" />
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground">
+          <div className="mt-3">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
               Scheduled Interviews
             </p>
-            <p className="text-[20px] font-bold leading-none text-[#2b2b46]">
+            <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
               {totalCounts.interview}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              In interview stage
             </p>
           </div>
         </Card>
-        <Card className="flex items-center gap-3 rounded-[16px] border bg-white p-4">
-          <div className="flex size-10 items-center justify-center rounded-full bg-[#e6fff0] text-emerald-600">
-            <Tag className="size-5" />
+        <Card className="rounded-[16px] border border-black/5 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
+          <div className="flex items-start justify-between">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#e6fff0] text-emerald-600">
+              <Tag className="size-5" />
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground">Offers Extended</p>
-            <p className="text-[20px] font-bold leading-none text-[#2b2b46]">
+          <div className="mt-3">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+              Offers Extended
+            </p>
+            <p className="mt-1 text-[24px] font-bold leading-none text-[#2b2b46]">
               {totalCounts.offer}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Offers awaiting response
             </p>
           </div>
         </Card>
       </div>
 
-      <Card className="space-y-4 rounded-[20px] border bg-white p-4">
+      <Card className="overflow-hidden rounded-[16px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <h2 className="text-[16px] font-semibold text-[#2b2b46]">
             Candidate Pipeline
           </h2>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={jobFilter} onValueChange={setJobFilter}>
-              <SelectTrigger className="h-8 rounded-full border bg-white text-xs">
+              <SelectTrigger className="h-9 w-[160px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Job position" />
               </SelectTrigger>
               <SelectContent>
@@ -635,7 +673,7 @@ export function CandidatesClient() {
               </SelectContent>
             </Select>
             <Select value={candidateFilter} onValueChange={setCandidateFilter}>
-              <SelectTrigger className="h-8 rounded-full border bg-white text-xs">
+              <SelectTrigger className="h-9 w-[160px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Candidate" />
               </SelectTrigger>
               <SelectContent>
@@ -648,7 +686,7 @@ export function CandidatesClient() {
               </SelectContent>
             </Select>
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="h-8 rounded-full border bg-white text-xs">
+              <SelectTrigger className="h-9 w-[140px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Source" />
               </SelectTrigger>
               <SelectContent>
@@ -661,7 +699,7 @@ export function CandidatesClient() {
               </SelectContent>
             </Select>
             <Select value={recruiterFilter} onValueChange={setRecruiterFilter}>
-              <SelectTrigger className="h-8 rounded-full border bg-white text-xs">
+              <SelectTrigger className="h-9 w-[150px] rounded-lg border-border bg-muted">
                 <SelectValue placeholder="Recruiter" />
               </SelectTrigger>
               <SelectContent>
@@ -676,17 +714,31 @@ export function CandidatesClient() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin">
           {STAGE_ORDER.map((stage) => {
             const cfg = STAGE_CONFIG[stage];
             const list = filtered.filter((c) => c.stage === stage);
+            const isDragOver = dragOverColumn === stage;
             return (
               <section
                 key={stage}
                 aria-label={cfg.label}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handleDrop(stage)}
-                className={cn("min-h-[320px] rounded-[12px] p-3", cfg.columnBg)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (dragOverColumn !== stage) setDragOverColumn(stage);
+                }}
+                onDragLeave={() => {
+                  if (dragOverColumn === stage) setDragOverColumn(null);
+                }}
+                onDrop={() => {
+                  handleDrop(stage);
+                  setDragOverColumn(null);
+                }}
+                className={cn(
+                  "flex min-h-[320px] w-[280px] min-w-[280px] shrink-0 snap-start flex-col rounded-[12px] p-3 transition",
+                  cfg.columnBg,
+                  isDragOver && "ring-2 ring-[#00acca]/20 bg-[#00acca]/5",
+                )}
               >
                 <div
                   className={cn(
@@ -700,55 +752,65 @@ export function CandidatesClient() {
                   </span>
                 </div>
                 <div className="flex flex-col gap-3">
-                  {list.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      draggable
-                      onDragStart={() => setDraggedId(c.id)}
-                      onDragEnd={() => setDraggedId(null)}
-                      onClick={() => {
-                        setSelected(c);
-                        setOpen(true);
-                      }}
-                      className="flex flex-col gap-2 rounded-[12px] border bg-white p-3 text-left shadow-sm transition hover:shadow-md"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="size-8">
-                          <AvatarFallback
-                            className={cn(
-                              "text-xs font-semibold text-[#2b2b46]",
-                              avatarBg(c.name),
-                            )}
-                          >
-                            {c.initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 overflow-hidden">
-                          <p className="truncate text-[13px] font-semibold text-[#2b2b46]">
-                            {c.name}
-                          </p>
-                          <p className="truncate text-[11px] text-muted-foreground">
-                            {c.role}
-                          </p>
+                  {list.map((c) => {
+                    const isDragging = draggedId === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        draggable
+                        onDragStart={() => setDraggedId(c.id)}
+                        onDragEnd={() => {
+                          setDraggedId(null);
+                          setDragOverColumn(null);
+                        }}
+                        onClick={() => {
+                          setSelected(c);
+                          setOpen(true);
+                        }}
+                        className={cn(
+                          "flex cursor-grab flex-col gap-2 rounded-[12px] border border-black/5 bg-white p-3 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(16,24,40,0.06)] transition hover:shadow-md active:cursor-grabbing",
+                          isDragging && "opacity-50 ring-2 ring-[#00acca]/30",
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar className="size-8">
+                            <AvatarFallback
+                              className={cn(
+                                "text-xs font-semibold text-[#2b2b46]",
+                                avatarBg(c.name),
+                              )}
+                            >
+                              {c.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 overflow-hidden">
+                            <p className="truncate text-[13px] font-semibold text-[#2b2b46]">
+                              {c.name}
+                            </p>
+                            <p className="truncate text-[11px] text-muted-foreground">
+                              {c.role}
+                            </p>
+                          </div>
+                          <GripVertical className="size-4 shrink-0 text-muted-foreground/40" />
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          Application: {c.appliedAt}
-                        </span>
-                        {c.rating ? (
-                          <span className="rounded-full bg-[#fff7e6] px-2 py-0.5 text-[11px] font-medium text-amber-700">
-                            Rating {c.rating}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            Application: {c.appliedAt}
                           </span>
-                        ) : c.status ? (
-                          <span className="rounded-full bg-[#e6fff0] px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                            {c.status}
-                          </span>
-                        ) : null}
-                      </div>
-                    </button>
-                  ))}
+                          {c.rating ? (
+                            <span className="rounded-full bg-[#fff7e6] px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                              Rating {c.rating}
+                            </span>
+                          ) : c.status ? (
+                            <span className="rounded-full bg-[#e6fff0] px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                              {c.status}
+                            </span>
+                          ) : null}
+                        </div>
+                      </button>
+                    );
+                  })}
                   {list.length === 0 ? (
                     <p className="py-6 text-center text-xs text-muted-foreground">
                       No candidates
@@ -762,7 +824,7 @@ export function CandidatesClient() {
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="flex h-[260px] flex-col rounded-[16px] border bg-white p-4">
+        <Card className="flex h-[260px] flex-col rounded-[16px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <h3 className="text-sm font-semibold text-[#2b2b46]">
             Pipeline Insights
           </h3>
@@ -785,20 +847,30 @@ export function CandidatesClient() {
           </div>
         </Card>
 
-        <Card className="flex h-[260px] flex-col rounded-[16px] border bg-white p-4">
+        <Card className="flex h-[260px] flex-col rounded-[16px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <h3 className="text-sm font-semibold text-[#2b2b46]">
             Recent Candidate Activity
           </h3>
           <div className="mt-4 flex flex-1 flex-col gap-3">
             {RECENT_ACTIVITY.map((a) => (
-              <div key={a.title} className="flex items-start gap-3">
-                <span className={cn("mt-1.5 size-2 rounded-full", a.color)} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium leading-tight text-[#2b2b46]">
+              <div key={a.title} className="flex items-center gap-3">
+                <Avatar className="size-8 shrink-0">
+                  <AvatarFallback
+                    className={cn(
+                      "text-xs font-semibold text-[#2b2b46]",
+                      avatarBg(a.name),
+                    )}
+                  >
+                    {getInitials(a.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-medium leading-tight text-[#2b2b46]">
                     {a.title}
                   </p>
                   <p className="text-xs text-muted-foreground">{a.time}</p>
                 </div>
+                <span className={cn("size-2 shrink-0 rounded-full", a.color)} />
               </div>
             ))}
           </div>
@@ -811,7 +883,7 @@ export function CandidatesClient() {
           </button>
         </Card>
 
-        <Card className="flex h-[260px] flex-col rounded-[16px] border bg-white p-4">
+        <Card className="flex h-[260px] flex-col rounded-[16px] border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
           <h3 className="text-sm font-semibold text-[#2b2b46]">
             Top Candidate Ratings
           </h3>
