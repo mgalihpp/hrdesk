@@ -2,7 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { Cents } from "@/lib/money";
 import { cents } from "@/lib/money";
 import type { PayRunStatus, PayrollResult } from "@/lib/payroll/types";
-import type { PayRunId, TenantId } from "@/lib/types";
+import type { PayRunId, PayslipId, TenantId } from "@/lib/types";
 
 export type NextPayrollData = {
   periodStart: string;
@@ -27,7 +27,51 @@ export type PayRunWithTotals = {
   net: Cents;
 };
 
+export type PayslipView = {
+  id: string;
+  tenantId: string;
+  payRunId: string;
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  gross: Cents;
+  deductions: Cents;
+  tax: Cents;
+  net: Cents;
+  periodLabel: string;
+  status: string;
+  periodStart: string;
+  periodEnd: string;
+  createdAt: Date;
+};
+
+export type PayslipDetail = PayslipView & {
+  payItems: Array<{
+    id: string;
+    category: string;
+    amount: Cents;
+    label: string;
+  }>;
+};
+
 type Prisma = PrismaClient;
+
+function periodLabelFromRun(periodStart: string): string {
+  return new Date(`${periodStart}T00:00:00Z`).toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function matchesStatus(payRunStatus: string, filter: string): boolean {
+  const f = filter.toLowerCase();
+  const s = payRunStatus.toLowerCase();
+  if (f === "paid") return s === "locked";
+  if (f === "pending") return s === "draft";
+  if (f === "generated") return s === "draft";
+  return s === f;
+}
 
 export function payRunRepo(prisma: Prisma, tenantId: TenantId) {
   return {
@@ -48,7 +92,6 @@ export function payRunRepo(prisma: Prisma, tenantId: TenantId) {
         };
       }
 
-      // v1 sequential writes; native transaction hardening requires replica set
       const payRun = await prisma.payRun.create({
         data: {
           tenantId,
@@ -212,6 +255,172 @@ export function payRunRepo(prisma: Prisma, tenantId: TenantId) {
         daysUntil,
         estimatedGross,
         employeeCount,
+      };
+    },
+
+    async listPayslips(opts?: {
+      status?: string;
+      payRunId?: string;
+    }): Promise<PayslipView[]> {
+      const where: Record<string, unknown> = { tenantId };
+      if (opts?.payRunId) where.payRunId = opts.payRunId;
+      const slips = (await prisma.payslip.findMany({
+        where: where as never,
+      })) as unknown as Array<{
+        id: string;
+        tenantId: string;
+        payRunId: string;
+        employeeId: string;
+        gross: number;
+        deductions: number;
+        tax: number;
+        net: number;
+        createdAt: Date;
+      }>;
+      if (slips.length === 0) return [];
+      const payRunIds = [...new Set(slips.map((s) => s.payRunId))];
+      const payRuns = (await prisma.payRun.findMany({
+        where: { tenantId, id: { in: payRunIds } },
+      })) as unknown as Array<{
+        id: string;
+        status: string;
+        periodStart: string;
+        periodEnd: string;
+      }>;
+      const payRunMap = new Map(payRuns.map((r) => [r.id, r]));
+      let filtered = slips;
+      if (opts?.status) {
+        filtered = slips.filter((s) => {
+          const pr = payRunMap.get(s.payRunId);
+          if (!pr) return false;
+          return matchesStatus(pr.status, opts.status as string);
+        });
+        if (filtered.length === 0) return [];
+      }
+      const employeeIds = [...new Set(filtered.map((s) => s.employeeId))];
+      const employees = (await prisma.employee.findMany({
+        where: { tenantId, id: { in: employeeIds } },
+      })) as unknown as Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        department: string | null;
+      }>;
+      const empMap = new Map(employees.map((e) => [e.id, e]));
+      return filtered.map((s) => {
+        const pr = payRunMap.get(s.payRunId);
+        const emp = empMap.get(s.employeeId);
+        const employeeName =
+          emp && (emp.firstName || emp.lastName)
+            ? `${emp.firstName ?? ""} ${emp.lastName ?? ""}`.trim()
+            : (emp?.email ?? "Unknown");
+        const department = (emp?.department as string | null) ?? "Engineering";
+        const periodStart = pr?.periodStart ?? "";
+        const periodEnd = pr?.periodEnd ?? "";
+        const status = pr?.status ?? "draft";
+        const periodLabel = periodStart ? periodLabelFromRun(periodStart) : "";
+        return {
+          id: s.id,
+          tenantId: s.tenantId,
+          payRunId: s.payRunId,
+          employeeId: s.employeeId,
+          employeeName,
+          department,
+          gross: cents(s.gross),
+          deductions: cents(s.deductions),
+          tax: cents(s.tax),
+          net: cents(s.net),
+          periodLabel,
+          status,
+          periodStart,
+          periodEnd,
+          createdAt: s.createdAt,
+        };
+      });
+    },
+
+    async getPayslipById(id: PayslipId | string): Promise<
+      | (PayslipView & {
+          payItems: Array<{
+            id: string;
+            category: string;
+            amount: Cents;
+            label: string;
+          }>;
+        })
+      | null
+    > {
+      const slip = (await prisma.payslip.findFirst({
+        where: { id: id as string, tenantId },
+      })) as unknown as {
+        id: string;
+        tenantId: string;
+        payRunId: string;
+        employeeId: string;
+        gross: number;
+        deductions: number;
+        tax: number;
+        net: number;
+        createdAt: Date;
+      } | null;
+      if (!slip) return null;
+      const payRun = (await prisma.payRun.findFirst({
+        where: { id: slip.payRunId, tenantId },
+      })) as unknown as {
+        id: string;
+        status: string;
+        periodStart: string;
+        periodEnd: string;
+      } | null;
+      if (!payRun) return null;
+      const employee = (await prisma.employee.findFirst({
+        where: { id: slip.employeeId, tenantId },
+      })) as unknown as {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        department: string | null;
+      } | null;
+      if (!employee) return null;
+      const items = (await prisma.payItem.findMany({
+        where: { payslipId: slip.id, tenantId },
+      })) as unknown as Array<{
+        id: string;
+        category: string;
+        amount: number;
+        label: string;
+      }>;
+      const employeeName =
+        employee.firstName || employee.lastName
+          ? `${employee.firstName ?? ""} ${employee.lastName ?? ""}`.trim()
+          : (employee.email ?? "Unknown");
+      const department =
+        (employee.department as string | null) ?? "Engineering";
+      const periodLabel = periodLabelFromRun(payRun.periodStart);
+      return {
+        id: slip.id,
+        tenantId: slip.tenantId,
+        payRunId: slip.payRunId,
+        employeeId: slip.employeeId,
+        employeeName,
+        department,
+        gross: cents(slip.gross),
+        deductions: cents(slip.deductions),
+        tax: cents(slip.tax),
+        net: cents(slip.net),
+        periodLabel,
+        status: payRun.status,
+        periodStart: payRun.periodStart,
+        periodEnd: payRun.periodEnd,
+        createdAt: slip.createdAt,
+        payItems: items.map((it) => ({
+          id: it.id,
+          category: it.category,
+          amount: cents(it.amount),
+          label: it.label,
+        })),
       };
     },
   };

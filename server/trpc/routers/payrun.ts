@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { cents } from "@/lib/money";
 import { runPayroll } from "@/lib/payroll/engine";
@@ -13,6 +14,8 @@ import {
   protectedProcedure,
   rbacAnyProcedure,
 } from "../init";
+
+const payslipStatus = z.enum(["Paid", "Pending", "Generated"]);
 
 const RUN_ROLES: Role[] = ["owner", "payrollAdmin"];
 
@@ -177,5 +180,37 @@ export const payrunRouter = createTRPCRouter({
         });
       } catch {}
       return result;
+    }),
+
+  listPayslips: protectedProcedure
+    .input(
+      z
+        .object({
+          status: payslipStatus.optional(),
+          payRunId: z.string().optional(),
+        })
+        .optional()
+        .default({}),
+    )
+    .query(async ({ ctx, input }) =>
+      payRunRepo(ctx.prisma, ctx.session.tenantId).listPayslips({
+        status: input?.status,
+        payRunId: input?.payRunId,
+      }),
+    ),
+
+  getPayslipById: protectedProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const r = await payRunRepo(
+        ctx.prisma,
+        ctx.session.tenantId,
+      ).getPayslipById(input.id as never);
+      if (!r)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Payslip not found",
+        });
+      return r;
     }),
 });

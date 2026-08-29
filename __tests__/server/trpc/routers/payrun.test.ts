@@ -24,6 +24,7 @@ function caller(roles: string[], prismaOverrides: unknown = {}) {
   const prisma = {
     employee: {
       findMany: vi.fn(async () => [mockEmployee()]),
+      findFirst: vi.fn(async () => mockEmployee()),
     },
     payRun: {
       findUnique: vi.fn(async () => null),
@@ -42,9 +43,11 @@ function caller(roles: string[], prismaOverrides: unknown = {}) {
       })),
       createMany: vi.fn(async () => ({})),
       findMany: vi.fn(async () => []),
+      findFirst: vi.fn(async () => null),
     },
     payItem: {
       createMany: vi.fn(async () => ({})),
+      findMany: vi.fn(async () => []),
     },
     timeEntry: {
       findMany: vi.fn(async () => []),
@@ -113,12 +116,15 @@ describe("payrun router RBAC", () => {
         create: vi.fn(async () => ({})),
         createMany: vi.fn(async () => ({})),
         findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => null),
       },
       payItem: {
         createMany: vi.fn(async () => ({})),
+        findMany: vi.fn(async () => []),
       },
       employee: {
         findMany: vi.fn(async () => [mockEmployee()]),
+        findFirst: vi.fn(async () => mockEmployee()),
       },
       timeEntry: {
         findMany: vi.fn(async () => []),
@@ -262,7 +268,10 @@ describe("payrun router TIME integration", () => {
       }),
     );
     const prisma = {
-      employee: { findMany: vi.fn(async () => [e1, e2]) },
+      employee: {
+        findMany: vi.fn(async () => [e1, e2]),
+        findFirst: vi.fn(async () => e1),
+      },
       payRun: {
         findUnique: vi.fn(async () => null),
         findFirst: vi.fn(async () => null),
@@ -277,8 +286,12 @@ describe("payrun router TIME integration", () => {
         create: payslipCreate,
         createMany: vi.fn(async () => ({})),
         findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => null),
       },
-      payItem: { createMany: vi.fn(async () => ({})) },
+      payItem: {
+        createMany: vi.fn(async () => ({})),
+        findMany: vi.fn(async () => []),
+      },
       timeEntry: { findMany: vi.fn(async () => []) },
       leave: { findMany: vi.fn(async () => leaveRows) },
     };
@@ -306,10 +319,10 @@ describe("payrun router TIME integration", () => {
         tenantId: "t1",
         employeeId: "e1",
         type: "clock",
-        startAt: new Date("2026-08-15T09:00:00.000Z"),
-        endAt: new Date("2026-08-15T17:00:00.000Z"),
+        startAt: new Date("2026-08-15T09:00:00Z"),
+        endAt: new Date("2026-08-15T17:00:00Z"),
         status: "approved",
-        approvedBy: null,
+        approvedBy: "u1",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -318,10 +331,10 @@ describe("payrun router TIME integration", () => {
         tenantId: "t1",
         employeeId: "e1",
         type: "clock",
-        startAt: new Date("2026-08-16T09:00:00.000Z"),
-        endAt: new Date("2026-08-16T17:00:00.000Z"),
-        status: "pending",
-        approvedBy: null,
+        startAt: new Date("2026-07-15T09:00:00Z"),
+        endAt: new Date("2026-07-15T17:00:00Z"),
+        status: "approved",
+        approvedBy: "u1",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -330,9 +343,9 @@ describe("payrun router TIME integration", () => {
         tenantId: "t1",
         employeeId: "e1",
         type: "clock",
-        startAt: new Date("2026-07-01T09:00:00.000Z"),
-        endAt: new Date("2026-07-01T17:00:00.000Z"),
-        status: "approved",
+        startAt: new Date("2026-08-20T09:00:00Z"),
+        endAt: new Date("2026-08-20T17:00:00Z"),
+        status: "pending",
         approvedBy: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -348,7 +361,7 @@ describe("payrun router TIME integration", () => {
         endDate: "2026-08-12",
         status: "approved",
         reason: null,
-        approvedBy: null,
+        approvedBy: "u1",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -356,23 +369,10 @@ describe("payrun router TIME integration", () => {
         id: "l2",
         tenantId: "t1",
         employeeId: "e1",
-        type: "sick",
-        startDate: "2026-08-20",
-        endDate: "2026-08-22",
-        status: "pending",
-        reason: null,
-        approvedBy: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: "l3",
-        tenantId: "t1",
-        employeeId: "e1",
         type: "vacation",
-        startDate: "2026-09-10",
-        endDate: "2026-09-12",
-        status: "approved",
+        startDate: "2026-08-10",
+        endDate: "2026-08-12",
+        status: "pending",
         reason: null,
         approvedBy: null,
         createdAt: new Date(),
@@ -382,7 +382,7 @@ describe("payrun router TIME integration", () => {
     const c = caller(["payrollAdmin"], {
       timeEntry: { findMany: vi.fn(async () => timeRows) },
       leave: { findMany: vi.fn(async () => leaveRows) },
-    } as unknown);
+    });
     const res = (await c.create({
       periodStart: "2026-08-01",
       periodEnd: "2026-08-31",
@@ -451,9 +451,16 @@ describe("payrun router TIME integration", () => {
         create: vi.fn(async () => ({})),
         createMany: vi.fn(async () => ({})),
         findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => null),
       },
-      payItem: { createMany: vi.fn(async () => ({})) },
-      employee: { findMany: vi.fn(async () => [mockEmployee()]) },
+      payItem: {
+        createMany: vi.fn(async () => ({})),
+        findMany: vi.fn(async () => []),
+      },
+      employee: {
+        findMany: vi.fn(async () => [mockEmployee()]),
+        findFirst: vi.fn(async () => mockEmployee()),
+      },
       timeEntry: { findMany: vi.fn(async () => timeRows) },
       leave: { findMany: vi.fn(async () => leaveRows) },
     } as unknown);
@@ -476,7 +483,10 @@ describe("payrun router TIME integration", () => {
     const timeFindMany = vi.fn(async () => []);
     const leaveFindMany = vi.fn(async () => []);
     const c = caller(["payrollAdmin"], {
-      employee: { findMany: employeeFindMany },
+      employee: {
+        findMany: employeeFindMany,
+        findFirst: vi.fn(async () => mockEmployee()),
+      },
       timeEntry: { findMany: timeFindMany },
       leave: { findMany: leaveFindMany },
     } as unknown);
@@ -509,5 +519,429 @@ describe("payrun router TIME integration", () => {
       )[0]?.[0] as { where: { tenantId: string } } | undefined
     )?.where;
     expect(leaveWhere?.tenantId).toBe("t1");
+  });
+});
+
+describe("payrun router payslip RBAC + filtering", () => {
+  it("listPayslips allowed for employee role", async () => {
+    const payslipRow = {
+      id: "ps1",
+      tenantId: "t1",
+      payRunId: "pr1",
+      employeeId: "e1",
+      gross: 10000,
+      deductions: 0,
+      tax: 1000,
+      net: 9000,
+      createdAt: new Date("2026-08-31T00:00:00Z"),
+    };
+    const c = caller(["employee"], {
+      payslip: {
+        findMany: vi.fn(async () => [payslipRow]),
+        findFirst: vi.fn(async () => null),
+        create: vi.fn(async () => ({})),
+        createMany: vi.fn(async () => ({})),
+      },
+      payRun: {
+        findUnique: vi.fn(async () => null),
+        findFirst: vi.fn(async () => null),
+        findMany: vi.fn(async () => [
+          {
+            id: "pr1",
+            status: "locked",
+            periodStart: "2026-08-01",
+            periodEnd: "2026-08-31",
+          },
+        ]),
+        create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+          id: "pr1",
+          ...data,
+        })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      employee: {
+        findMany: vi.fn(async () => [
+          {
+            id: "e1",
+            firstName: "Ada",
+            lastName: "Lovelace",
+            email: "ada@example.com",
+            department: "Engineering",
+          },
+        ]),
+        findFirst: vi.fn(async () => ({
+          id: "e1",
+          firstName: "Ada",
+          lastName: "Lovelace",
+          email: "ada@example.com",
+          department: "Engineering",
+        })),
+      },
+      payItem: {
+        findMany: vi.fn(async () => []),
+        createMany: vi.fn(async () => ({})),
+      },
+    } as unknown);
+    const res = await c.listPayslips({});
+    expect(Array.isArray(res)).toBe(true);
+    expect(res).toHaveLength(1);
+  });
+
+  it("listPayslips filtering by status Paid", async () => {
+    const slips = [
+      {
+        id: "ps1",
+        tenantId: "t1",
+        payRunId: "prLocked",
+        employeeId: "e1",
+        gross: 1000,
+        deductions: 0,
+        tax: 100,
+        net: 900,
+        createdAt: new Date(),
+      },
+      {
+        id: "ps2",
+        tenantId: "t1",
+        payRunId: "prDraft",
+        employeeId: "e2",
+        gross: 1000,
+        deductions: 0,
+        tax: 100,
+        net: 900,
+        createdAt: new Date(),
+      },
+    ];
+    const payRuns = [
+      {
+        id: "prLocked",
+        status: "locked",
+        periodStart: "2026-08-01",
+        periodEnd: "2026-08-31",
+      },
+      {
+        id: "prDraft",
+        status: "draft",
+        periodStart: "2026-08-01",
+        periodEnd: "2026-08-31",
+      },
+    ];
+    const c = caller(["employee"], {
+      payslip: {
+        findMany: vi.fn(async () => slips),
+        findFirst: vi.fn(async () => null),
+        create: vi.fn(async () => ({})),
+        createMany: vi.fn(async () => ({})),
+      },
+      payRun: {
+        findUnique: vi.fn(async () => null),
+        findFirst: vi.fn(async () => null),
+        findMany: vi.fn(async () => payRuns),
+        create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+          id: "pr1",
+          ...data,
+        })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      employee: {
+        findMany: vi.fn(async () => [
+          {
+            id: "e1",
+            firstName: "A",
+            lastName: "B",
+            email: "a@b.com",
+            department: "Engineering",
+          },
+          {
+            id: "e2",
+            firstName: "C",
+            lastName: "D",
+            email: "c@d.com",
+            department: "Sales",
+          },
+        ]),
+        findFirst: vi.fn(async () => ({
+          id: "e1",
+          firstName: "A",
+          lastName: "B",
+          email: "a@b.com",
+          department: "Engineering",
+        })),
+      },
+      payItem: {
+        findMany: vi.fn(async () => []),
+        createMany: vi.fn(async () => ({})),
+      },
+    } as unknown);
+    const paid = await c.listPayslips({ status: "Paid" });
+    expect(paid).toHaveLength(1);
+    expect(paid[0]?.id).toBe("ps1");
+    const pending = await c.listPayslips({ status: "Pending" });
+    expect(pending).toHaveLength(1);
+    expect(pending[0]?.id).toBe("ps2");
+  });
+
+  it("listPayslips filtering by payRunId tenant-scoped", async () => {
+    const slip = {
+      id: "ps1",
+      tenantId: "t1",
+      payRunId: "pr1",
+      employeeId: "e1",
+      gross: 1000,
+      deductions: 0,
+      tax: 0,
+      net: 1000,
+      createdAt: new Date(),
+    };
+    const payslipFindMany = vi.fn(async () => [slip]);
+    const c = caller(["employee"], {
+      payslip: {
+        findMany: payslipFindMany,
+        findFirst: vi.fn(async () => null),
+        create: vi.fn(async () => ({})),
+        createMany: vi.fn(async () => ({})),
+      },
+      payRun: {
+        findUnique: vi.fn(async () => null),
+        findFirst: vi.fn(async () => null),
+        findMany: vi.fn(async () => [
+          {
+            id: "pr1",
+            status: "locked",
+            periodStart: "2026-08-01",
+            periodEnd: "2026-08-31",
+          },
+        ]),
+        create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+          id: "pr1",
+          ...data,
+        })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      employee: {
+        findMany: vi.fn(async () => [
+          {
+            id: "e1",
+            firstName: "A",
+            lastName: "B",
+            email: "a@b.com",
+            department: "Engineering",
+          },
+        ]),
+        findFirst: vi.fn(async () => ({
+          id: "e1",
+          firstName: "A",
+          lastName: "B",
+          email: "a@b.com",
+          department: "Engineering",
+        })),
+      },
+      payItem: {
+        findMany: vi.fn(async () => []),
+        createMany: vi.fn(async () => ({})),
+      },
+    } as unknown);
+    const res = await c.listPayslips({ payRunId: "pr1" });
+    expect(res).toHaveLength(1);
+    expect(payslipFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: "t1", payRunId: "pr1" }),
+      }),
+    );
+  });
+
+  it("getPayslipById returns NOT_FOUND cross-tenant", async () => {
+    const c = caller(["employee"], {
+      payslip: {
+        findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => null),
+        create: vi.fn(async () => ({})),
+        createMany: vi.fn(async () => ({})),
+      },
+      payRun: {
+        findUnique: vi.fn(async () => null),
+        findFirst: vi.fn(async () => null),
+        findMany: vi.fn(async () => []),
+        create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+          id: "pr1",
+          ...data,
+        })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      employee: {
+        findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => null),
+      },
+      payItem: {
+        findMany: vi.fn(async () => []),
+        createMany: vi.fn(async () => ({})),
+      },
+    } as unknown);
+    await expect(c.getPayslipById({ id: "missing" })).rejects.toBeInstanceOf(
+      TRPCError,
+    );
+    await expect(c.getPayslipById({ id: "missing" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("getPayslipById success returns enriched view", async () => {
+    const slip = {
+      id: "ps1",
+      tenantId: "t1",
+      payRunId: "pr1",
+      employeeId: "e1",
+      gross: 10000,
+      deductions: 500,
+      tax: 1000,
+      net: 8500,
+      createdAt: new Date("2026-08-31T00:00:00Z"),
+    };
+    const c = caller(["employee"], {
+      payslip: {
+        findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => slip),
+        create: vi.fn(async () => ({})),
+        createMany: vi.fn(async () => ({})),
+      },
+      payRun: {
+        findUnique: vi.fn(async () => null),
+        findFirst: vi.fn(async () => ({
+          id: "pr1",
+          status: "locked",
+          periodStart: "2026-08-01",
+          periodEnd: "2026-08-31",
+        })),
+        findMany: vi.fn(async () => []),
+        create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+          id: "pr1",
+          ...data,
+        })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      employee: {
+        findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => ({
+          id: "e1",
+          firstName: "Ada",
+          lastName: "Lovelace",
+          email: "ada@example.com",
+          department: "Engineering",
+        })),
+      },
+      payItem: {
+        findMany: vi.fn(async () => [
+          { id: "pi1", category: "gross", amount: 10000, label: "Base" },
+        ]),
+        createMany: vi.fn(async () => ({})),
+      },
+    } as unknown);
+    const res = await c.getPayslipById({ id: "ps1" });
+    expect(res.id).toBe("ps1");
+    expect(res.employeeName).toBe("Ada Lovelace");
+    expect(res.payItems).toHaveLength(1);
+    expect(res.payItems[0]?.amount).toBe(10000);
+  });
+
+  it("getPayslipById tenancy scope uses tenantId", async () => {
+    const slip = {
+      id: "ps1",
+      tenantId: "t1",
+      payRunId: "pr1",
+      employeeId: "e1",
+      gross: 1000,
+      deductions: 0,
+      tax: 0,
+      net: 1000,
+      createdAt: new Date(),
+    };
+    const payslipFindFirst = vi.fn(async () => slip);
+    const payRunFindFirst = vi.fn(async () => ({
+      id: "pr1",
+      status: "locked",
+      periodStart: "2026-08-01",
+      periodEnd: "2026-08-31",
+    }));
+    const employeeFindFirst = vi.fn(async () => ({
+      id: "e1",
+      firstName: "A",
+      lastName: "B",
+      email: "a@b.com",
+      department: "Engineering",
+    }));
+    const payItemFindMany = vi.fn(async () => []);
+    const c = caller(["employee"], {
+      payslip: {
+        findMany: vi.fn(async () => []),
+        findFirst: payslipFindFirst,
+        create: vi.fn(async () => ({})),
+        createMany: vi.fn(async () => ({})),
+      },
+      payRun: {
+        findUnique: vi.fn(async () => null),
+        findFirst: payRunFindFirst,
+        findMany: vi.fn(async () => []),
+        create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+          id: "pr1",
+          ...data,
+        })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      employee: {
+        findMany: vi.fn(async () => []),
+        findFirst: employeeFindFirst,
+      },
+      payItem: {
+        findMany: payItemFindMany,
+        createMany: vi.fn(async () => ({})),
+      },
+    } as unknown);
+    await c.getPayslipById({ id: "ps1" });
+    expect(payslipFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: "t1" }),
+      }),
+    );
+    expect(payRunFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: "t1" }),
+      }),
+    );
+    expect(payItemFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: "t1" }),
+      }),
+    );
+  });
+
+  it("listPayslips with no input defaults to empty object", async () => {
+    const c = caller(["employee"], {
+      payslip: {
+        findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => null),
+        create: vi.fn(async () => ({})),
+        createMany: vi.fn(async () => ({})),
+      },
+      payRun: {
+        findUnique: vi.fn(async () => null),
+        findFirst: vi.fn(async () => null),
+        findMany: vi.fn(async () => []),
+        create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+          id: "pr1",
+          ...data,
+        })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      employee: {
+        findMany: vi.fn(async () => []),
+        findFirst: vi.fn(async () => null),
+      },
+      payItem: {
+        findMany: vi.fn(async () => []),
+        createMany: vi.fn(async () => ({})),
+      },
+    } as unknown);
+    const res = await c.listPayslips();
+    expect(res).toEqual([]);
   });
 });
