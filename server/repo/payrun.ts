@@ -1,6 +1,22 @@
 import type { PrismaClient } from "@prisma/client";
+import type { Cents } from "@/lib/money";
+import { cents } from "@/lib/money";
 import type { PayRunStatus, PayrollResult } from "@/lib/payroll/types";
 import type { PayRunId, TenantId } from "@/lib/types";
+
+export type PayRunWithTotals = {
+  id: string;
+  tenantId: string;
+  entityId: string;
+  periodStart: string;
+  periodEnd: string;
+  status: string;
+  idempotencyKey: string;
+  createdAt: Date;
+  payslipCount: number;
+  gross: Cents;
+  net: Cents;
+};
 
 type Prisma = PrismaClient;
 
@@ -86,6 +102,49 @@ export function payRunRepo(prisma: Prisma, tenantId: TenantId) {
       return prisma.payRun.findMany({
         where: { tenantId },
         orderBy: { periodStart: "desc" },
+      });
+    },
+
+    async listWithTotals(): Promise<PayRunWithTotals[]> {
+      const runs = await prisma.payRun.findMany({
+        where: { tenantId },
+        orderBy: { periodStart: "desc" },
+      });
+      if (runs.length === 0) return [];
+      const runIds = runs.map((r) => r.id);
+      const slips = await prisma.payslip.findMany({
+        where: { tenantId, payRunId: { in: runIds } },
+      });
+      const byRun: Record<
+        string,
+        { count: number; gross: number; net: number }
+      > = {};
+      for (const s of slips as unknown as Array<{
+        payRunId: string;
+        gross: number;
+        net: number;
+      }>) {
+        const cur = byRun[s.payRunId] ?? { count: 0, gross: 0, net: 0 };
+        cur.count += 1;
+        cur.gross += s.gross;
+        cur.net += s.net;
+        byRun[s.payRunId] = cur;
+      }
+      return runs.map((r) => {
+        const agg = byRun[r.id] ?? { count: 0, gross: 0, net: 0 };
+        return {
+          id: r.id,
+          tenantId: r.tenantId,
+          entityId: r.entityId,
+          periodStart: r.periodStart,
+          periodEnd: r.periodEnd,
+          status: r.status,
+          idempotencyKey: r.idempotencyKey,
+          createdAt: r.createdAt,
+          payslipCount: agg.count,
+          gross: cents(agg.gross),
+          net: cents(agg.net),
+        };
       });
     },
 
