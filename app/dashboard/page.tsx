@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AttendanceCard } from "@/components/dashboard/attendance-card";
 import {
   RecentActivity,
+  type RecentActivityItem,
   RecruitmentOverview,
   UpcomingEvents,
 } from "@/components/dashboard/bottom-cards";
@@ -15,9 +16,15 @@ import { PayrunTable } from "@/components/dashboard/payrun-table";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ReportingSection } from "@/components/dashboard/reporting-section";
 import { Button } from "@/components/ui/button";
+import {
+  formatRelativeTime,
+  getAuditLabel,
+  getInitials,
+} from "@/lib/audit/display";
 import { prisma } from "@/lib/prisma";
 import { getShellSession } from "@/lib/shell-session";
 import type { TenantId } from "@/lib/types";
+import { auditRepo } from "@/server/repo/audit";
 import { employeeRepo } from "@/server/repo/employee";
 import { payRunRepo } from "@/server/repo/payrun";
 import { reportingRepo } from "@/server/repo/reporting";
@@ -86,7 +93,8 @@ export default async function DashboardPage({
   const repo = reportingRepo(prisma, tenantId);
   const eRepo = employeeRepo(prisma, tenantId);
   const payRepo = payRunRepo(prisma, tenantId);
-  const [overview, series, attendance, payRuns, employeesRaw, pipeline] =
+  const aRepo = auditRepo(prisma, tenantId);
+  const [overview, series, attendance, payRuns, employeesRaw, pipeline, auditPage] =
     await Promise.all([
       repo.overview(range),
       repo.getPayrollSeries(range),
@@ -94,6 +102,7 @@ export default async function DashboardPage({
       payRepo.listWithTotals(),
       eRepo.list(),
       repo.getPipeline(),
+      aRepo.list({ limit: 4 }),
     ]);
   const employees: EmployeeTableRow[] = employeesRaw.map((e) => ({
     id: e.id as string,
@@ -104,6 +113,23 @@ export default async function DashboardPage({
     status: e.status,
     hireDate: e.hireDate,
   }));
+  const actorIds = [...new Set(auditPage.items.map((a) => a.actorId))];
+  const users =
+    actorIds.length > 0
+      ? await prisma.user.findMany({ where: { id: { in: actorIds } } })
+      : [];
+  const userMap = new Map(users.map((u) => [u.id, u.name] as const));
+  const recentActivityItems: RecentActivityItem[] = auditPage.items.map((a) => {
+    const name = userMap.get(a.actorId) ?? "";
+    return {
+      id: a.id as string,
+      actorName: name,
+      initials: getInitials(name),
+      label: getAuditLabel(a.action, a.metadata),
+      createdAt: a.createdAt,
+      timeAgo: formatRelativeTime(a.createdAt),
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -129,7 +155,7 @@ export default async function DashboardPage({
       <div className="grid gap-6 lg:grid-cols-3">
         <RecruitmentOverview pipeline={pipeline} />
         <UpcomingEvents />
-        <RecentActivity />
+        <RecentActivity items={recentActivityItems} />
       </div>
     </div>
   );
