@@ -280,6 +280,30 @@ model Candidate {
   @@index([tenantId, stage])
   @@map("candidate")
 }
+
+model Interview {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  tenantId      String
+  candidateId   String   @db.ObjectId
+  candidateName String
+  position      String
+  time          String
+  interviewType String
+  interviewer   String
+  source        String?
+  recruiter     String?
+  status        String   @default("scheduled")
+  feedback      String?
+  rating        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, candidateId])
+  @@index([tenantId, status])
+  @@map("interview")
+}
+
 model Subscription {
   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   tenantId           String   @unique
