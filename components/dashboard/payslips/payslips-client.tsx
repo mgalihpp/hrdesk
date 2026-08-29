@@ -19,7 +19,6 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { trpc } from "@/lib/trpc/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { trpc } from "@/lib/trpc/client";
 export type PayslipStatus = "Paid" | "Pending" | "Generated";
 export type PayslipType = "Monthly" | "Bonus" | "Off-cycle";
 

@@ -283,7 +283,9 @@ export function LeaveRequestsClient({
     },
     onError: (e) =>
       setError(
-        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission."
+          : e.message,
       ),
   });
 
@@ -294,7 +296,9 @@ export function LeaveRequestsClient({
     },
     onError: (e) =>
       setError(
-        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission."
+          : e.message,
       ),
   });
 
@@ -305,7 +309,9 @@ export function LeaveRequestsClient({
     },
     onError: (e) =>
       setError(
-        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission."
+          : e.message,
       ),
   });
 
@@ -316,7 +322,9 @@ export function LeaveRequestsClient({
     },
     onError: (e) =>
       setError(
-        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission."
+          : e.message,
       ),
   });
 
@@ -332,7 +340,9 @@ export function LeaveRequestsClient({
     },
     onError: (e) =>
       setError(
-        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission."
+          : e.message,
       ),
   });
 
@@ -1014,8 +1024,7 @@ export function LeaveRequestsClient({
               disabled={isPending}
               onClick={async () => {
                 if (!editRow) return;
-                if (editForm.status === "approved")
-                  handleApprove(editRow.id);
+                if (editForm.status === "approved") handleApprove(editRow.id);
                 else if (editForm.status === "rejected")
                   handleReject(editRow.id);
                 else if (editForm.status === "cancelled")
