@@ -4,7 +4,7 @@ import type {
   AuditLogId,
   AuditView,
 } from "@/lib/audit/types";
-import { parseAuditAction } from "@/lib/audit/types";
+import { isAuditAction, parseAuditAction } from "@/lib/audit/types";
 import type { TenantId } from "@/lib/types";
 
 type AuditPrisma = PrismaClient & {
@@ -31,7 +31,11 @@ function toView(row: StoredAudit): AuditView {
     id: row.id as AuditLogId,
     tenantId: row.tenantId,
     actorId: row.actorId,
-    action: parseAuditAction(row.action),
+    // Defensive: old seed/DB may contain actions not in AUDIT_ACTIONS.
+    // Don't crash the dashboard on unknown actions; fall through to fallbackLabel.
+    action: (isAuditAction(row.action)
+      ? row.action
+      : row.action) as AuditView["action"],
     targetType: row.targetType,
     targetId: row.targetId,
     metadata: row.metadata ?? null,

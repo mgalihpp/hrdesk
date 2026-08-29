@@ -3,6 +3,7 @@ import type { AuditAction } from "./types";
 export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   "payrun.create": "Payroll created",
   "payrun.lock": "Payroll locked",
+  "payroll.run": "Payroll run",
   "billing.upsertSubscription": "Subscription updated",
   "billing.createInvoice": "Invoice created",
   "integration.connect": "Integration connected",
@@ -11,6 +12,8 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   "integration.ingestWebhook": "Webhook received",
   "integration.retrySync": "Sync retried",
   "reporting.export": "Report exported",
+  "employee.create": "Employee created",
+  "tenant.update": "Workspace updated",
 };
 
 function fallbackLabel(action: string): string {
@@ -25,10 +28,13 @@ function fallbackLabel(action: string): string {
 }
 
 export function getAuditLabel(
-  action: AuditAction,
+  action: AuditAction | (string & {}),
   _metadata?: string | null,
 ): string {
-  return AUDIT_ACTION_LABELS[action] ?? fallbackLabel(action);
+  return (
+    (AUDIT_ACTION_LABELS as Record<string, string>)[action] ??
+    fallbackLabel(action)
+  );
 }
 
 export function formatRelativeTime(date: Date, now: Date = new Date()): string {

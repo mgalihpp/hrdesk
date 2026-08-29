@@ -51,8 +51,11 @@ export function NextPayroll({ data }: { data: NextPayrollData | null }) {
         <div className="mt-4">
           <p className="text-xs text-muted-foreground">Estimated Payroll</p>
           <p className="mt-1 text-[22px] font-bold tracking-tight text-[#1e2a4a]">
-            Rp{" "}
-            {Number(moneyToMajor(data.estimatedGross)).toLocaleString("id-ID")}
+            $
+            {Number(moneyToMajor(data.estimatedGross)).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
             {data.employeeCount} employees

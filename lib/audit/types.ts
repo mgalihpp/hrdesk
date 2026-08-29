@@ -3,6 +3,7 @@ export type AuditLogId = string & { readonly __brand: "AuditLogId" };
 export const AUDIT_ACTIONS = [
   "payrun.create",
   "payrun.lock",
+  "payroll.run",
   "billing.upsertSubscription",
   "billing.createInvoice",
   "integration.connect",
@@ -11,6 +12,8 @@ export const AUDIT_ACTIONS = [
   "integration.ingestWebhook",
   "integration.retrySync",
   "reporting.export",
+  "employee.create",
+  "tenant.update",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -18,6 +21,7 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 const AUDIT_ACTION_MAP: Record<string, true> = {
   "payrun.create": true,
   "payrun.lock": true,
+  "payroll.run": true,
   "billing.upsertSubscription": true,
   "billing.createInvoice": true,
   "integration.connect": true,
@@ -26,6 +30,8 @@ const AUDIT_ACTION_MAP: Record<string, true> = {
   "integration.ingestWebhook": true,
   "integration.retrySync": true,
   "reporting.export": true,
+  "employee.create": true,
+  "tenant.update": true,
 };
 
 export function parseAuditAction(value: string): AuditAction {
