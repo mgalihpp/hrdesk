@@ -156,7 +156,7 @@ function matchesFilters(
   const byStatus = status === "all" || r.status === status;
   let byDate = true;
   if (dateRange !== "All Time") {
-    const recordDate = new Date(r.date + "T00:00:00");
+    const recordDate = new Date(`${r.date}T00:00:00`);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     if (dateRange === "Last 7 Days") {
@@ -226,7 +226,7 @@ function avatarBg(name: string): string {
 }
 
 function formatDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
+  const d = new Date(`${iso}T00:00:00`);
   const day = String(d.getDate()).padStart(2, "0");
   const month = d.toLocaleString("en-GB", { month: "short" });
   const year = d.getFullYear();
@@ -290,8 +290,8 @@ export function AttendanceClient() {
     const times = filtered
       .filter((r) => r.clockIn)
       .map((r) => {
-        const [h, m] = r.clockIn!.split(":").map(Number);
-        return h * 60 + m;
+        const [h, m] = (r.clockIn as string).split(":").map(Number);
+        return (h ?? 0) * 60 + (m ?? 0);
       });
     if (times.length === 0) return "—";
     const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
