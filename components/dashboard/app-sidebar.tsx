@@ -62,7 +62,7 @@ const NAV_GROUPS = [
   {
     label: "TIME",
     items: [
-      { label: "Attendance", icon: Clock3, href: "/dashboard#attendance" },
+      { label: "Attendance", icon: Clock3, href: "/dashboard/attendance" },
       {
         label: "Leave Requests",
         icon: CalendarClock,
