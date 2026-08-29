@@ -9,6 +9,28 @@ import {
 
 const WRITE_ROLES: Role[] = ["owner", "admin", "hr"];
 
+const departmentEnum = z.enum([
+  "Engineering",
+  "Marketing",
+  "Product",
+  "HR",
+  "Finance",
+  "Sales",
+  "Customer Support",
+  "Legal",
+  "Operations",
+  "Design",
+  "QA",
+  "Data",
+]);
+
+const employmentTypeEnum = z.enum([
+  "Full Time",
+  "Part Time",
+  "Contract",
+  "Intern",
+]);
+
 const createSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
@@ -18,6 +40,10 @@ const createSchema = z.object({
   compensation: z.number().int().nonnegative(),
   hireDate: z.string().min(1),
   status: z.enum(["active", "on_leave", "terminated"]),
+  department: departmentEnum.optional(),
+  position: z.string().min(1).optional(),
+  employmentType: employmentTypeEnum.optional(),
+  avatarUrl: z.string().optional(),
 });
 
 const updateSchema = createSchema.partial();

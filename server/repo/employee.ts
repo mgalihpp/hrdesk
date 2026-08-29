@@ -1,7 +1,13 @@
 import type { Employee, PrismaClient } from "@prisma/client";
 import { decrypt, encrypt } from "@/lib/crypto";
 import { cents } from "@/lib/money";
-import type { EmployeeId, EmployeeView, TenantId } from "@/lib/types";
+import type {
+  Department,
+  EmployeeId,
+  EmployeeView,
+  EmploymentType,
+  TenantId,
+} from "@/lib/types";
 
 export interface NewEmployee {
   firstName: string;
@@ -12,12 +18,14 @@ export interface NewEmployee {
   compensation: number;
   hireDate: string;
   status: EmployeeView["status"];
+  department?: Department;
+  position?: string;
+  employmentType?: EmploymentType;
+  avatarUrl?: string;
 }
 
 type StoredEmployee = Employee;
 
-// The repository is the PII boundary and the tenancy boundary: every query is
-// filtered by tenantId (from the session), so cross-tenant reads are impossible.
 export function employeeRepo(prisma: PrismaClient, tenantId: TenantId) {
   const toView = (d: StoredEmployee): EmployeeView => ({
     id: d.id as EmployeeId,
@@ -30,6 +38,10 @@ export function employeeRepo(prisma: PrismaClient, tenantId: TenantId) {
     compensation: d.compensation as EmployeeView["compensation"],
     hireDate: d.hireDate,
     status: d.status as EmployeeView["status"],
+    department: (d.department as Department | null) ?? "Engineering",
+    position: (d.position as string | null) ?? "Employee",
+    employmentType: (d.employmentType as EmploymentType | null) ?? "Full Time",
+    avatarUrl: (d.avatarUrl as string | null) ?? "",
     createdAt: new Date(d.createdAt).toISOString(),
   });
 
@@ -46,6 +58,10 @@ export function employeeRepo(prisma: PrismaClient, tenantId: TenantId) {
           compensation: cents(input.compensation),
           hireDate: input.hireDate,
           status: input.status,
+          department: input.department ?? "Engineering",
+          position: input.position ?? "Employee",
+          employmentType: input.employmentType ?? "Full Time",
+          avatarUrl: input.avatarUrl ?? "",
         },
       });
       return toView(created);
@@ -65,6 +81,11 @@ export function employeeRepo(prisma: PrismaClient, tenantId: TenantId) {
       if (patch.email !== undefined) data.email = patch.email;
       if (patch.hireDate !== undefined) data.hireDate = patch.hireDate;
       if (patch.status !== undefined) data.status = patch.status;
+      if (patch.department !== undefined) data.department = patch.department;
+      if (patch.position !== undefined) data.position = patch.position;
+      if (patch.employmentType !== undefined)
+        data.employmentType = patch.employmentType;
+      if (patch.avatarUrl !== undefined) data.avatarUrl = patch.avatarUrl;
       if (patch.compensation !== undefined) {
         data.compensation = cents(patch.compensation);
       }
