@@ -79,9 +79,10 @@ export default async function DashboardPage({
 
   const tenantId = session.user.tenantId as TenantId;
   const repo = reportingRepo(prisma, tenantId);
-  const [overview, series] = await Promise.all([
+  const [overview, series, attendance] = await Promise.all([
     repo.overview(range),
     repo.getPayrollSeries(range),
+    repo.getAttendance(range),
   ]);
 
   return (
@@ -93,14 +94,7 @@ export default async function DashboardPage({
         initialTo={to}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.7fr_0.9fr]">
-        <div className="rounded-[20px] border bg-white p-4">
-          <p className="text-sm text-muted-foreground">
-            Attendance overview is available above via reporting.
-          </p>
-        </div>
-        <AttendanceCard />
-      </div>
+      <AttendanceCard attendance={attendance} />
 
       <PayrunTable />
 
