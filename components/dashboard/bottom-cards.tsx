@@ -1,8 +1,23 @@
 import { Briefcase, Calendar, DollarSign, Mail, Users } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import type { CandidateStage } from "@/lib/recruitment/types";
+import type { PipelineSummary } from "@/lib/reporting/types";
 
-export function RecruitmentOverview() {
+export function RecruitmentOverview({
+  pipeline,
+}: {
+  pipeline: PipelineSummary;
+}) {
+  const interviewStage = "interview" as CandidateStage;
+  const offerStage = "offer" as CandidateStage;
+  const hiredStage = "hired" as CandidateStage;
+  const openPositions = pipeline.openJobs;
+  const candidates = pipeline.totalCandidates;
+  const interviews = pipeline.byStage[interviewStage] ?? 0;
+  const offers =
+    (pipeline.byStage[offerStage] ?? 0) + (pipeline.byStage[hiredStage] ?? 0);
+  const isEmpty = pipeline.totalCandidates === 0 && pipeline.totalJobs === 0;
   return (
     <div className="rounded-[20px] border bg-white p-5 shadow-[0_1px_2px_rgba(43,43,70,0.06),0_8px_24px_rgba(43,43,70,0.06)]">
       <div className="flex items-center justify-between">
@@ -17,54 +32,68 @@ export function RecruitmentOverview() {
         </Link>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-xl border bg-white px-3 py-3">
-          <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#eef3ff] text-[#2563eb]">
-              <Briefcase className="size-5" />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">Open Positions</p>
-              <p className="text-lg font-bold leading-none text-[#1e2a4a]">8</p>
+        {isEmpty ? (
+          <p className="col-span-2 text-sm text-muted-foreground">
+            No recruitment data
+          </p>
+        ) : (
+          <>
+            <div className="rounded-xl border bg-white px-3 py-3">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-[#eef3ff] text-[#2563eb]">
+                  <Briefcase className="size-5" />
+                </span>
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Open Positions
+                  </p>
+                  <p className="text-lg font-bold leading-none text-[#1e2a4a]">
+                    {openPositions}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="rounded-xl border bg-white px-3 py-3">
-          <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#ecfdf5] text-[#16a34a]">
-              <Users className="size-5" />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">Candidates</p>
-              <p className="text-lg font-bold leading-none text-[#1e2a4a]">
-                42
-              </p>
+            <div className="rounded-xl border bg-white px-3 py-3">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-[#ecfdf5] text-[#16a34a]">
+                  <Users className="size-5" />
+                </span>
+                <div>
+                  <p className="text-xs text-muted-foreground">Candidates</p>
+                  <p className="text-lg font-bold leading-none text-[#1e2a4a]">
+                    {candidates}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="rounded-xl border bg-white px-3 py-3">
-          <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#fff7ed] text-[#f97316]">
-              <Calendar className="size-5" />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">Interviews</p>
-              <p className="text-lg font-bold leading-none text-[#1e2a4a]">
-                13
-              </p>
+            <div className="rounded-xl border bg-white px-3 py-3">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-[#fff7ed] text-[#f97316]">
+                  <Calendar className="size-5" />
+                </span>
+                <div>
+                  <p className="text-xs text-muted-foreground">Interviews</p>
+                  <p className="text-lg font-bold leading-none text-[#1e2a4a]">
+                    {interviews}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="rounded-xl border bg-white px-3 py-3">
-          <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#f3e8ff] text-[#9333ea]">
-              <Mail className="size-5" />
-            </span>
-            <div>
-              <p className="text-xs text-muted-foreground">Offers</p>
-              <p className="text-lg font-bold leading-none text-[#1e2a4a]">4</p>
+            <div className="rounded-xl border bg-white px-3 py-3">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-[#f3e8ff] text-[#9333ea]">
+                  <Mail className="size-5" />
+                </span>
+                <div>
+                  <p className="text-xs text-muted-foreground">Offers</p>
+                  <p className="text-lg font-bold leading-none text-[#1e2a4a]">
+                    {offers}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
