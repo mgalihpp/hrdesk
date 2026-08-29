@@ -15,6 +15,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -672,12 +673,24 @@ export function PayslipsClient() {
                     <ArrowUpDown className="size-3" />
                   </button>
                 </th>
-                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Employee ID</th>
-                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Department</th>
-                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Last Payrun Date</th>
-                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Total Net Pay</th>
-                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">Status</th>
-                <th className="whitespace-nowrap px-3 py-3 text-right font-medium tracking-wider">Actions</th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">
+                  Employee ID
+                </th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">
+                  Department
+                </th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">
+                  Last Payrun Date
+                </th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">
+                  Total Net Pay
+                </th>
+                <th className="whitespace-nowrap px-3 py-3 font-medium tracking-wider">
+                  Status
+                </th>
+                <th className="whitespace-nowrap px-3 py-3 text-right font-medium tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -1223,21 +1236,38 @@ export function PayslipsClient() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!pdfRecord} onOpenChange={(o) => { if (!o) setPdfRecord(null); }}>
+      <Dialog
+        open={!!pdfRecord}
+        onOpenChange={(o) => {
+          if (!o) setPdfRecord(null);
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px] p-0">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4">
             <div>
-              <DialogTitle className="text-base font-semibold text-[#2b2b46]">Payslip Preview</DialogTitle>
+              <DialogTitle className="text-base font-semibold text-[#2b2b46]">
+                Payslip Preview
+              </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                {pdfRecord?.employee.name} • {pdfRecord?.employeeId} • {pdfRecord?.lastPayrunDate}
+                {pdfRecord?.employee.name} • {pdfRecord?.employeeId} •{" "}
+                {pdfRecord?.lastPayrunDate}
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="h-8 rounded-lg" onClick={handlePrintPayslip}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-lg"
+                onClick={handlePrintPayslip}
+              >
                 <Printer className="size-3.5" />
                 Print
               </Button>
-              <Button size="sm" className="h-8 rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8]" onClick={handlePrintPayslip}>
+              <Button
+                size="sm"
+                className="h-8 rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
+                onClick={handlePrintPayslip}
+              >
                 <FileText className="size-3.5" />
                 Download PDF
               </Button>
@@ -1246,56 +1276,156 @@ export function PayslipsClient() {
           {pdfRecord ? (
             <div className="bg-white p-8 text-black">
               <div className="flex flex-col items-center text-center">
-                <img src="/saasdesk-logo.svg" alt="SAASDESK" className="h-7 w-auto" />
-                <p className="mt-2 text-xs text-muted-foreground">123 Business Avenue, South Jakarta</p>
+                <Image
+                  src="/saasdesk-logo.svg"
+                  alt="SAASDESK"
+                  width={136}
+                  height={30}
+                  className="h-7 w-auto"
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  123 Business Avenue, South Jakarta
+                </p>
               </div>
               <div className="mt-8">
-                <p className="text-sm font-bold">Pay Slip for the period of {pdfRecord.lastPayrunDate.replace("30 ", "")}</p>
+                <p className="text-sm font-bold">
+                  Pay Slip for the period of{" "}
+                  {pdfRecord.lastPayrunDate.replace("30 ", "")}
+                </p>
                 <div className="mt-3 grid grid-cols-2 gap-8 text-xs leading-5">
                   <div className="space-y-1">
-                    <div className="flex"><span className="w-[140px]">Employee ID</span><span className="w-4">:</span><span>{pdfRecord.employeeId}</span></div>
-                    <div className="flex"><span className="w-[140px]">Name</span><span className="w-4">:</span><span>{pdfRecord.employee.name}</span></div>
-                    <div className="flex"><span className="w-[140px]">Department</span><span className="w-4">:</span><span>{pdfRecord.department}</span></div>
-                    <div className="flex"><span className="w-[140px]">Designation</span><span className="w-4">:</span><span>Sales Executive</span></div>
-                    <div className="flex"><span className="w-[140px]">Pay Date</span><span className="w-4">:</span><span>27-08-2025</span></div>
+                    <div className="flex">
+                      <span className="w-[140px]">Employee ID</span>
+                      <span className="w-4">:</span>
+                      <span>{pdfRecord.employeeId}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[140px]">Name</span>
+                      <span className="w-4">:</span>
+                      <span>{pdfRecord.employee.name}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[140px]">Department</span>
+                      <span className="w-4">:</span>
+                      <span>{pdfRecord.department}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[140px]">Designation</span>
+                      <span className="w-4">:</span>
+                      <span>Sales Executive</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[140px]">Pay Date</span>
+                      <span className="w-4">:</span>
+                      <span>27-08-2025</span>
+                    </div>
                   </div>
                   <div className="space-y-1">
-                    <div className="flex"><span className="w-[180px]">Date of Joining</span><span className="w-4">:</span><span>01-03-2020</span></div>
-                    <div className="flex"><span className="w-[180px]">Employment Insurance No.</span><span className="w-4">:</span><span>ID/SA/5678</span></div>
-                    <div className="flex"><span className="w-[180px]">Health Insurance No.</span><span className="w-4">:</span><span>89</span></div>
-                    <div className="flex"><span className="w-[180px]">Days Worked</span><span className="w-4">:</span><span>22.0</span></div>
-                    <div className="flex"><span className="w-[180px]">Bank Account / Cheque No.</span><span className="w-4">:</span><span>xxxxxxxxxxxx</span></div>
+                    <div className="flex">
+                      <span className="w-[180px]">Date of Joining</span>
+                      <span className="w-4">:</span>
+                      <span>01-03-2020</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[180px]">
+                        Employment Insurance No.
+                      </span>
+                      <span className="w-4">:</span>
+                      <span>ID/SA/5678</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[180px]">Health Insurance No.</span>
+                      <span className="w-4">:</span>
+                      <span>89</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[180px]">Days Worked</span>
+                      <span className="w-4">:</span>
+                      <span>22.0</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[180px]">
+                        Bank Account / Cheque No.
+                      </span>
+                      <span className="w-4">:</span>
+                      <span>xxxxxxxxxxxx</span>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-6 grid grid-cols-2 gap-8">
                   <div>
                     <p className="text-sm font-bold">Earnings</p>
                     <div className="mt-2 space-y-1 text-xs leading-5">
-                      <div className="flex justify-between"><span>Basic Salary</span><span className="font-mono">: {formatMoney(12000)}</span></div>
-                      <div className="flex justify-between"><span>Position Allowance</span><span className="font-mono">: {formatMoney(6000)}</span></div>
-                      <div className="flex justify-between"><span>Transport Allowance</span><span className="font-mono">: {formatMoney(2500)}</span></div>
-                      <div className="flex justify-between"><span>Health Allowance</span><span className="font-mono">: {formatMoney(1800)}</span></div>
-                      <div className="flex justify-between"><span>Housing Allowance</span><span className="font-mono">: {formatMoney(4500)}</span></div>
-                      <div className="flex justify-between"><span>Meal Allowance</span><span className="font-mono">: {formatMoney(800)}</span></div>
+                      <div className="flex justify-between">
+                        <span>Basic Salary</span>
+                        <span className="font-mono">
+                          : {formatMoney(12000)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Position Allowance</span>
+                        <span className="font-mono">: {formatMoney(6000)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Transport Allowance</span>
+                        <span className="font-mono">: {formatMoney(2500)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Health Allowance</span>
+                        <span className="font-mono">: {formatMoney(1800)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Housing Allowance</span>
+                        <span className="font-mono">: {formatMoney(4500)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Meal Allowance</span>
+                        <span className="font-mono">: {formatMoney(800)}</span>
+                      </div>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm font-bold">Deductions</p>
                     <div className="mt-2 space-y-1 text-xs leading-5">
-                      <div className="flex justify-between"><span>Income Tax (PPh 21)</span><span className="font-mono">: {formatMoney(250)}</span></div>
-                      <div className="flex justify-between"><span>Employment Insurance</span><span className="font-mono">: {formatMoney(1500)}</span></div>
-                      <div className="flex justify-between"><span>Health Insurance</span><span className="font-mono">: {formatMoney(400)}</span></div>
+                      <div className="flex justify-between">
+                        <span>Income Tax (PPh 21)</span>
+                        <span className="font-mono">: {formatMoney(250)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Employment Insurance</span>
+                        <span className="font-mono">: {formatMoney(1500)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Health Insurance</span>
+                        <span className="font-mono">: {formatMoney(400)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="my-4 h-px bg-black" />
                 <div className="grid grid-cols-2 gap-8 text-xs leading-5">
                   <div className="space-y-2">
-                    <div className="flex"><span className="w-[170px] font-bold">Total Earnings (Rounded)</span><span className="w-4">:</span><span className="font-mono"> {formatMoney(27600)}</span></div>
-                    <div className="flex"><span className="w-[170px] font-bold">Take Home Pay</span><span className="w-4">:</span><span className="font-mono"> {formatMoney(25450)}</span></div>
+                    <div className="flex">
+                      <span className="w-[170px] font-bold">
+                        Total Earnings (Rounded)
+                      </span>
+                      <span className="w-4">:</span>
+                      <span className="font-mono"> {formatMoney(27600)}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-[170px] font-bold">Take Home Pay</span>
+                      <span className="w-4">:</span>
+                      <span className="font-mono"> {formatMoney(25450)}</span>
+                    </div>
                   </div>
                   <div>
-                    <div className="flex"><span className="w-[150px] font-bold">Total Deductions</span><span className="w-4">:</span><span className="font-mono"> {formatMoney(2150)}</span></div>
+                    <div className="flex">
+                      <span className="w-[150px] font-bold">
+                        Total Deductions
+                      </span>
+                      <span className="w-4">:</span>
+                      <span className="font-mono"> {formatMoney(2150)}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-12 text-right text-xs leading-5">

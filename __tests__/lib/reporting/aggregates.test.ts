@@ -239,7 +239,7 @@ describe("headcount", () => {
     expect(r.active).toBe(2);
     expect(r.onLeave).toBe(1);
     expect(r.terminated).toBe(1);
-    expect(r.byStatus["active"]).toBe(2);
+    expect(r.byStatus.active).toBe(2);
   });
 });
 
@@ -323,8 +323,8 @@ describe("billingSummary", () => {
     expect(r.totalAmount).toBe(cents(22000));
     expect(r.paidAmount).toBe(cents(17000));
     expect(r.openAmount).toBe(cents(5000));
-    expect(r.byStatus["paid"].count).toBe(2);
-    expect(r.byStatus["paid"].amount).toBe(cents(17000));
+    expect(r.byStatus.paid.count).toBe(2);
+    expect(r.byStatus.paid.amount).toBe(cents(17000));
   });
 
   it("Cents reconciliation total equals paid plus open plus other", () => {
