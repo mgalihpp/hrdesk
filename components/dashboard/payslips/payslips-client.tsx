@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpDown,
   CalendarDays,
@@ -18,6 +19,7 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { trpc } from "@/lib/trpc/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -91,8 +93,8 @@ export function PayslipsClient({
   initialPayslips: PayslipRecord[];
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [records, setRecords] = useState<PayslipRecord[]>(initialPayslips);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -208,66 +210,20 @@ export function PayslipsClient({
     });
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     setError(null);
-    setSubmitting(true);
     setRecords((prev) => prev.filter((r) => r.id !== id));
     setSelected((prev) => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
-    try {
-      const res = await fetch("/api/trpc/payrun.remove", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (res.status !== 404 && !res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          setError("You do not have permission to delete payslips.");
-        } else if (text) {
-          setError(text);
-        }
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    router.refresh();
+    queryClient.invalidateQueries();
   }
 
-  async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.name.trim() || !form.email.trim()) return;
-    setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/payrun.create", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          periodStart: "2026-10-01",
-          periodEnd: "2026-10-31",
-          entityId: "default",
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          throw new Error("You do not have permission to generate payslips.");
-        }
-        if (
-          text.includes("idempotency") ||
-          text.includes("duplicate") ||
-          text.includes("already exists")
-        ) {
-          throw new Error("Pay run already exists for this period.");
-        }
-        throw new Error(text || "Failed to generate payslip");
-      }
+  const createMutation = trpc.payrun.create.useMutation({
+    onSuccess: () => {
       const netPay = Number(form.netPay.replace(/[^0-9]/g, "")) || 0;
       const newRecord: PayslipRecord = {
         id: `ps-${Date.now()}`,
@@ -299,11 +255,44 @@ export function PayslipsClient({
       });
       setPage(1);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+      queryClient.invalidateQueries();
+    },
+    onError: (e) => {
+      if (e.data?.code === "FORBIDDEN")
+        setError("You do not have permission to generate payslips.");
+      else if (
+        e.message.includes("idempotency") ||
+        e.message.includes("duplicate") ||
+        e.message.includes("already exists")
+      )
+        setError("Pay run already exists for this period.");
+      else setError(e.message);
+    },
+  });
+
+  const lockMutation = trpc.payrun.lock.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) => {
+      if (e.data?.code === "FORBIDDEN")
+        setError("You do not have permission to edit payslips.");
+      else setError(e.message);
+    },
+  });
+
+  const isPending = createMutation.isPending || lockMutation.isPending;
+
+  function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.email.trim()) return;
+    setError(null);
+    createMutation.mutate({
+      periodStart: "2026-10-01",
+      periodEnd: "2026-10-31",
+      entityId: "default",
+    });
   }
 
   function openEdit(r: PayslipRecord) {
@@ -320,11 +309,10 @@ export function PayslipsClient({
     });
   }
 
-  async function handleEdit(e: React.FormEvent) {
+  function handleEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editRecord) return;
     setError(null);
-    setSubmitting(true);
     const netPay = Number(editForm.netPay.replace(/[^0-9]/g, "")) || 0;
     setRecords((prev) =>
       prev.map((r) =>
@@ -348,26 +336,7 @@ export function PayslipsClient({
     );
     const editingId = editRecord.id;
     setEditRecord(null);
-    try {
-      const res = await fetch("/api/trpc/payrun.lock", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: editingId }),
-      });
-      if (res.status !== 404 && !res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          setError("You do not have permission to edit payslips.");
-        } else if (text) {
-          setError(text);
-        }
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    lockMutation.mutate({ id: editingId });
   }
 
   function handlePrintPayslip() {
@@ -628,7 +597,7 @@ export function PayslipsClient({
               </tr>
             </thead>
             <tbody>
-              {submitting ? (
+              {isPending ? (
                 <tr>
                   <td colSpan={8} className="px-3 py-3">
                     <div className="animate-pulse h-4 rounded bg-muted" />
@@ -948,9 +917,10 @@ export function PayslipsClient({
               </Button>
               <Button
                 type="submit"
+                disabled={isPending}
                 className="bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
               >
-                Generate
+                {createMutation.isPending ? "Generating..." : "Generate"}
               </Button>
             </DialogFooter>
           </form>
@@ -1167,9 +1137,10 @@ export function PayslipsClient({
               </Button>
               <Button
                 type="submit"
+                disabled={isPending}
                 className="bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
               >
-                Save
+                {lockMutation.isPending ? "Saving..." : "Save"}
               </Button>
             </DialogFooter>
           </form>

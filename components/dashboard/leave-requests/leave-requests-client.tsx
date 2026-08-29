@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
   ChevronLeft,
@@ -34,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { trpc } from "@/lib/trpc/client";
 import type { Leave } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -130,7 +132,6 @@ const avatarBg = (name: string) => {
 };
 
 function mapLeaveToDisplay(l: Leave): LeaveRequestDisplay {
-  // map backend LeaveType (vacation|sick|unpaid|other) to display (vacation|sick|personal|other)
   const rawType = l.type as string;
   const type: LeaveTypeKey =
     rawType === "unpaid" ? "personal" : (rawType as LeaveTypeKey);
@@ -160,6 +161,7 @@ export function LeaveRequestsClient({
   initialLeaves: Leave[];
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const initialRequests = useMemo(
     () => initialLeaves.map(mapLeaveToDisplay),
     [initialLeaves],
@@ -178,7 +180,6 @@ export function LeaveRequestsClient({
   const [editRow, setEditRow] = useState<LeaveRequestDisplay | null>(null);
   const [confirmDelete, setConfirmDelete] =
     useState<LeaveRequestDisplay | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -196,11 +197,9 @@ export function LeaveRequestsClient({
     status: "pending" as LeaveStatusKey,
   });
 
-  // sync when server refresh provides new leaves
   useMemo(() => {
     setRequests(initialRequests);
     return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRequests]);
 
   const filtered = useMemo(() => {
@@ -268,34 +267,8 @@ export function LeaveRequestsClient({
     setSelected(next);
   }
 
-  async function handleCreate() {
-    setError(null);
-    if (!form.name || !form.email || !form.start || !form.end) {
-      setError("Name, email, start and end dates are required.");
-      return;
-    }
-    // map personal -> unpaid for API
-    const apiType = form.type === "personal" ? "unpaid" : form.type;
-    const employeeId = `emp-${Date.now().toString(36)}`;
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/leave.create", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          employeeId,
-          type: apiType,
-          startDate: form.start,
-          endDate: form.end,
-          reason: form.reason || null,
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Failed to create");
-      }
+  const createMutation = trpc.leave.create.useMutation({
+    onSuccess: () => {
       setNewOpen(false);
       setForm({
         name: "",
@@ -306,11 +279,85 @@ export function LeaveRequestsClient({
         reason: "",
       });
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+      ),
+  });
+
+  const approveMutation = trpc.leave.approve.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+      ),
+  });
+
+  const rejectMutation = trpc.leave.reject.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+      ),
+  });
+
+  const cancelMutation = trpc.leave.cancel.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+      ),
+  });
+
+  const removeMutation = trpc.leave.remove.useMutation({
+    onSuccess: (_data, vars) => {
+      setRequests((prev) => prev.filter((r) => r.id !== vars.id));
+      setConfirmDelete(null);
+      const next = new Set(selected);
+      next.delete(vars.id);
+      setSelected(next);
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+      ),
+  });
+
+  const isPending =
+    createMutation.isPending ||
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    cancelMutation.isPending ||
+    removeMutation.isPending;
+
+  function handleCreate() {
+    setError(null);
+    if (!form.name || !form.email || !form.start || !form.end) {
+      setError("Name, email, start and end dates are required.");
+      return;
     }
+    const apiType = form.type === "personal" ? "unpaid" : form.type;
+    const employeeId = `emp-${Date.now().toString(36)}`;
+    createMutation.mutate({
+      employeeId,
+      type: apiType as "vacation" | "sick" | "unpaid" | "other",
+      startDate: form.start,
+      endDate: form.end,
+      reason: form.reason || null,
+    });
   }
 
   function openEdit(row: LeaveRequestDisplay) {
@@ -323,101 +370,24 @@ export function LeaveRequestsClient({
     });
   }
 
-  async function handleApprove(id: string) {
+  function handleApprove(id: string) {
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/leave.approve", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Approve failed");
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    approveMutation.mutate({ id });
   }
 
-  async function handleReject(id: string) {
+  function handleReject(id: string) {
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/leave.reject", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Reject failed");
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    rejectMutation.mutate({ id });
   }
 
-  async function handleCancel(id: string) {
+  function handleCancel(id: string) {
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/leave.cancel", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Cancel failed");
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    cancelMutation.mutate({ id });
   }
 
-  async function handleDelete(row: LeaveRequestDisplay) {
+  function handleDelete(row: LeaveRequestDisplay) {
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/leave.remove", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: row.id }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Delete failed");
-      }
-      setRequests((prev) => prev.filter((r) => r.id !== row.id));
-      setConfirmDelete(null);
-      const next = new Set(selected);
-      next.delete(row.id);
-      setSelected(next);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    removeMutation.mutate({ id: row.id });
   }
 
   const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
@@ -430,7 +400,7 @@ export function LeaveRequestsClient({
           {error}
         </div>
       ) : null}
-      {submitting ? (
+      {isPending ? (
         <div className="h-2 w-full animate-pulse rounded bg-muted" />
       ) : null}
       <div className="grid gap-4 md:grid-cols-3">
@@ -585,7 +555,7 @@ export function LeaveRequestsClient({
               </tr>
             </thead>
             <tbody>
-              {submitting ? (
+              {isPending ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-3">
                     <div className="animate-pulse h-4 bg-muted rounded" />
@@ -857,10 +827,10 @@ export function LeaveRequestsClient({
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={submitting}
+              disabled={isPending}
               className="bg-[#1e3a5f] text-white hover:bg-[#162a44]"
             >
-              {submitting ? "Creating..." : "Create Request"}
+              {createMutation.isPending ? "Creating..." : "Create Request"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -921,7 +891,7 @@ export function LeaveRequestsClient({
                     <Button
                       size="sm"
                       onClick={() => handleApprove(viewRow.id)}
-                      disabled={submitting}
+                      disabled={isPending}
                       className="bg-emerald-600 hover:bg-emerald-700"
                     >
                       Approve
@@ -930,7 +900,7 @@ export function LeaveRequestsClient({
                       size="sm"
                       variant="outline"
                       onClick={() => handleReject(viewRow.id)}
-                      disabled={submitting}
+                      disabled={isPending}
                     >
                       Reject
                     </Button>
@@ -938,7 +908,7 @@ export function LeaveRequestsClient({
                       size="sm"
                       variant="ghost"
                       onClick={() => handleCancel(viewRow.id)}
-                      disabled={submitting}
+                      disabled={isPending}
                     >
                       Cancel
                     </Button>
@@ -1041,24 +1011,22 @@ export function LeaveRequestsClient({
               Cancel
             </Button>
             <Button
-              disabled={submitting}
+              disabled={isPending}
               onClick={async () => {
                 if (!editRow) return;
-                // edit maps to status change via approve/reject/cancel
                 if (editForm.status === "approved")
-                  await handleApprove(editRow.id);
+                  handleApprove(editRow.id);
                 else if (editForm.status === "rejected")
-                  await handleReject(editRow.id);
+                  handleReject(editRow.id);
                 else if (editForm.status === "cancelled")
-                  await handleCancel(editRow.id);
+                  handleCancel(editRow.id);
                 else {
-                  // pending no-op
                   setEditRow(null);
                 }
               }}
               className="bg-[#1e3a5f] text-white hover:bg-[#162a44]"
             >
-              {submitting ? "Saving..." : "Save Changes"}
+              {isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1086,10 +1054,10 @@ export function LeaveRequestsClient({
             </Button>
             <Button
               variant="destructive"
-              disabled={submitting}
+              disabled={isPending}
               onClick={() => confirmDelete && handleDelete(confirmDelete)}
             >
-              {submitting ? "Deleting..." : "Delete"}
+              {removeMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUp,
   Calendar,
@@ -40,6 +41,7 @@ import type {
   CandidateView,
   Job,
 } from "@/lib/recruitment/types";
+import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
 export type CandidateDisplay = {
@@ -137,7 +139,6 @@ function toDisplay(c: CandidateView, jobs: Job[]): CandidateDisplay {
   const appliedAt = Number.isNaN(created.getTime())
     ? c.createdAt.slice(0, 10)
     : `${String(created.getHours()).padStart(2, "0")}.${String(created.getMinutes()).padStart(2, "0")}`;
-  // hired/rejected stages fall back to offer column; keep raw stage for logic
   const stage = c.stage as CandidateStage;
   return {
     id: c.id as string,
@@ -267,6 +268,7 @@ export function CandidatesClient({
   initialJobs: Job[];
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [candidates, setCandidates] = useState<CandidateDisplay[]>(() =>
     initialCandidates.map((c) => toDisplay(c, initialJobs)),
   );
@@ -280,9 +282,7 @@ export function CandidatesClient({
   const [selected, setSelected] = useState<CandidateDisplay | null>(null);
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hireSubmitting, setHireSubmitting] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState({
     jobId: (initialJobs[0]?.id as unknown as string) ?? "",
     firstName: "",
@@ -367,7 +367,62 @@ export function CandidatesClient({
     }));
   }, [candidates]);
 
-  async function handleCreate(e: React.FormEvent) {
+  const createMutation = trpc.candidate.create.useMutation({
+    onSuccess: () => {
+      setCreateOpen(false);
+      setCreateForm({
+        jobId: initialJobs[0]?.id as unknown as string ?? "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+      });
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+      ),
+  });
+
+  const moveStageMutation = trpc.candidate.moveStage.useMutation({
+    onSuccess: (_data, vars) => {
+      setCandidates((prev) =>
+        prev.map((c) => (c.id === vars.id ? { ...c, stage: vars.to } : c)),
+      );
+      setSelected((prev) =>
+        prev && prev.id === vars.id ? { ...prev, stage: vars.to } : prev,
+      );
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+      ),
+  });
+
+  const hireMutation = trpc.candidate.hire.useMutation({
+    onSuccess: (_data, vars) => {
+      setCandidates((prev) =>
+        prev.map((c) => (c.id === vars.id ? { ...c, stage: "hired" } : c)),
+      );
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN" ? "You do not have permission." : e.message,
+      ),
+  });
+
+  const isPending =
+    createMutation.isPending ||
+    moveStageMutation.isPending ||
+    hireMutation.isPending;
+
+  function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (
@@ -379,68 +434,18 @@ export function CandidatesClient({
       setError("Job, first name, last name and email are required.");
       return;
     }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/candidate.create", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          jobId: createForm.jobId,
-          firstName: createForm.firstName.trim(),
-          lastName: createForm.lastName.trim(),
-          email: createForm.email.trim(),
-          phone: createForm.phone.trim() || null,
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Failed to create candidate");
-      }
-      setCreateOpen(false);
-      setCreateForm({
-        jobId: initialJobs[0]?.id ?? "",
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-      });
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    createMutation.mutate({
+      jobId: createForm.jobId,
+      firstName: createForm.firstName.trim(),
+      lastName: createForm.lastName.trim(),
+      email: createForm.email.trim(),
+      phone: createForm.phone.trim() || null,
+    });
   }
 
-  async function callMoveStage(id: string, to: CandidateStage) {
+  function callMoveStage(id: string, to: CandidateStage) {
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/candidate.moveStage", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id, to }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Move failed");
-      }
-      setCandidates((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, stage: to } : c)),
-      );
-      setSelected((prev) =>
-        prev && prev.id === id ? { ...prev, stage: to } : prev,
-      );
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    moveStageMutation.mutate({ id, to });
   }
 
   function handleDrop(target: CandidateStageColumn) {
@@ -460,46 +465,24 @@ export function CandidatesClient({
       setDragOverColumn(null);
       return;
     }
-    // optimistic then live
     setDraggedId(null);
     setDragOverColumn(null);
-    void callMoveStage(dragged.id, target as CandidateStage);
+    callMoveStage(dragged.id, target as CandidateStage);
   }
 
   function moveStage(id: string, to: CandidateStage) {
     const from = candidates.find((c) => c.id === id)?.stage;
     if (!from || !canTransition(from, to)) return;
-    void callMoveStage(id, to);
+    callMoveStage(id, to);
   }
 
-  async function handleHire(id: string) {
+  function handleHire(id: string) {
     setError(null);
-    setHireSubmitting(id);
-    try {
-      const res = await fetch("/api/trpc/candidate.hire", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          id,
-          compensation: 6000000,
-          hireDate: new Date().toISOString().slice(0, 10),
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Hire failed");
-      }
-      setCandidates((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, stage: "hired" } : c)),
-      );
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setHireSubmitting(null);
-    }
+    hireMutation.mutate({
+      id,
+      compensation: 6000000,
+      hireDate: new Date().toISOString().slice(0, 10),
+    });
   }
 
   return (
@@ -533,7 +516,7 @@ export function CandidatesClient({
           {error}
         </div>
       ) : null}
-      {submitting ? (
+      {isPending ? (
         <div className="h-2 w-full animate-pulse rounded bg-muted" />
       ) : null}
 
@@ -705,7 +688,7 @@ export function CandidatesClient({
                   </span>
                 </div>
                 <div className="flex flex-col gap-3">
-                  {submitting ? (
+                  {isPending ? (
                     <div className="animate-pulse h-16 rounded-[12px] bg-white/60" />
                   ) : null}
                   {list.map((c) => {
@@ -767,7 +750,7 @@ export function CandidatesClient({
                       </button>
                     );
                   })}
-                  {list.length === 0 && !submitting ? (
+                  {list.length === 0 && !isPending ? (
                     <p className="py-6 text-center text-xs text-muted-foreground">
                       No candidates
                     </p>
@@ -930,6 +913,7 @@ export function CandidatesClient({
                       variant="outline"
                       className="rounded-full"
                       onClick={() => moveStage(selected.id, n)}
+                      disabled={isPending}
                     >
                       Move to{" "}
                       {STAGE_CONFIG[n as CandidateStageColumn]?.label ?? n}
@@ -946,12 +930,10 @@ export function CandidatesClient({
                     <Button
                       size="sm"
                       className="rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
-                      disabled={hireSubmitting === selected.id}
+                      disabled={hireMutation.isPending}
                       onClick={() => handleHire(selected.id)}
                     >
-                      {hireSubmitting === selected.id
-                        ? "Hiring..."
-                        : "Hire candidate"}
+                      {hireMutation.isPending ? "Hiring..." : "Hire candidate"}
                     </Button>
                   </div>
                 ) : null}
@@ -1052,10 +1034,10 @@ export function CandidatesClient({
               </Button>
               <Button
                 type="submit"
-                disabled={submitting}
+                disabled={isPending}
                 className="bg-[#2563eb] hover:bg-[#1d4ed8]"
               >
-                {submitting ? "Creating..." : "Create"}
+                {createMutation.isPending ? "Creating..." : "Create"}
               </Button>
             </DialogFooter>
           </form>

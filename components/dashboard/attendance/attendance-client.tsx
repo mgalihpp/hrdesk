@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUp,
   CalendarCheck,
@@ -9,7 +10,6 @@ import {
   Eye,
   MapPin,
   MoreVertical,
-  Pencil,
   Plus,
   Search,
   Trash2,
@@ -59,6 +59,7 @@ import type {
   DateRangePreset,
   Department,
 } from "@/lib/attendance/types";
+import { trpc } from "@/lib/trpc/client";
 import type { TimeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -253,16 +254,13 @@ function timeEntryToRecord(e: TimeEntry): AttendanceRecord {
   const clockOut = Number.isNaN(end.getTime())
     ? null
     : `${String(end.getUTCHours()).padStart(2, "0")}:${String(end.getUTCMinutes()).padStart(2, "0")}`;
-  // map TimeEntryStatus to AttendanceStatus
   let status: AttendanceStatus = "Active";
   if (e.status === "rejected") status = "On Leave";
   else if (e.status === "pending") status = "Active";
   else status = "Active";
-  // late heuristic: if clockIn after 09:00
   if (clockIn) {
     const [h] = clockIn.split(":").map(Number);
     if ((h ?? 0) >= 9 && status === "Active") {
-      // keep Active; UI will show Late only if explicitly mapped
     }
   }
   const shortId = String(e.employeeId).slice(-6);
@@ -288,6 +286,7 @@ export function AttendanceClient({
   initialEntries: TimeEntry[];
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const initialRecords = useMemo(
     () => initialEntries.map(timeEntryToRecord),
     [initialEntries],
@@ -302,7 +301,6 @@ export function AttendanceClient({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [logOpen, setLogOpen] = useState(false);
   const [viewRecord, setViewRecord] = useState<AttendanceRecord | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
@@ -314,8 +312,6 @@ export function AttendanceClient({
     status: "Active" as AttendanceStatus,
   });
 
-  // keep local records in sync when server refreshes (initialEntries changes)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const _sync = useMemo(() => {
     setRecords(initialRecords);
     return null;
@@ -417,7 +413,59 @@ export function AttendanceClient({
     URL.revokeObjectURL(url);
   }
 
-  async function handleLog(e: React.FormEvent) {
+  const createMutation = trpc.timeEntry.create.useMutation({
+    onSuccess: () => {
+      setLogOpen(false);
+      setForm({
+        name: "",
+        email: "",
+        department: "Engineering",
+        date: "",
+        clockIn: "",
+        clockOut: "",
+        status: "Active",
+      });
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+
+  const removeMutation = trpc.timeEntry.remove.useMutation({
+    onSuccess: (_data, variables) => {
+      setRecords((prev) => prev.filter((x) => x.id !== variables.id));
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+
+  const approveMutation = trpc.timeEntry.approve.useMutation({
+    onSuccess: () => {
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+
+  const isPending =
+    createMutation.isPending ||
+    removeMutation.isPending ||
+    approveMutation.isPending;
+
+  function handleLog(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!form.name.trim() || !form.email.trim()) {
@@ -435,84 +483,18 @@ export function AttendanceClient({
       setError("Clock in must be before clock out.");
       return;
     }
-    setSubmitting(true);
-    try {
-      // Use a synthetic employeeId derived from email if needed; backend expects any string
-      const employeeId = `emp-${Date.now().toString(36)}`;
-      const res = await fetch("/api/trpc/timeEntry.create", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ employeeId, type: "manual", startAt, endAt }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Failed to log attendance");
-      }
-      setLogOpen(false);
-      setForm({
-        name: "",
-        email: "",
-        department: "Engineering",
-        date: "",
-        clockIn: "",
-        clockOut: "",
-        status: "Active",
-      });
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    const employeeId = `emp-${Date.now().toString(36)}`;
+    createMutation.mutate({ employeeId, type: "manual", startAt, endAt });
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/timeEntry.remove", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Delete failed");
-      }
-      setRecords((prev) => prev.filter((x) => x.id !== id));
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    removeMutation.mutate({ id });
   }
 
-  async function handleApprove(id: string) {
+  function handleApprove(id: string) {
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/timeEntry.approve", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN"))
-          throw new Error("You do not have permission.");
-        throw new Error(text || "Approve failed");
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error");
-    } finally {
-      setSubmitting(false);
-    }
+    approveMutation.mutate({ id });
   }
 
   return (
@@ -522,7 +504,7 @@ export function AttendanceClient({
           {error}
         </div>
       ) : null}
-      {submitting ? (
+      {isPending ? (
         <div className="h-2 w-full animate-pulse rounded bg-muted" />
       ) : null}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -702,7 +684,7 @@ export function AttendanceClient({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {submitting ? (
+              {isPending ? (
                 <TableRow>
                   <TableCell colSpan={8}>
                     <div className="animate-pulse h-4 bg-muted rounded" />
@@ -1016,10 +998,10 @@ export function AttendanceClient({
               </Button>
               <Button
                 type="submit"
-                disabled={submitting}
+                disabled={isPending}
                 className="bg-[#2563eb] hover:bg-[#1d4ed8]"
               >
-                {submitting ? "Saving..." : "Log Attendance"}
+                {isPending ? "Saving..." : "Log Attendance"}
               </Button>
             </DialogFooter>
           </form>

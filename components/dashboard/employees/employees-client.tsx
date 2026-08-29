@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUp,
   Building2,
@@ -58,6 +59,7 @@ import type {
   EmployeeStatusLabel,
   EmploymentType,
 } from "@/lib/employees/types";
+import { trpc } from "@/lib/trpc/client";
 
 const STATUS_STYLE: Record<EmployeeStatusLabel, string> = {
   Active: "bg-[#e6fff0] text-emerald-700 border-0",
@@ -211,6 +213,7 @@ export function EmployeesClient({
   initialEmployees: EmployeeDisplay[];
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [employees] = useState<EmployeeDisplay[]>(initialEmployees);
   const [q, setQ] = useState("");
   const [department, setDepartment] = useState("all");
@@ -240,8 +243,65 @@ export function EmployeesClient({
     joinedDate: "",
     compensation: "",
   });
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const createMutation = trpc.employee.create.useMutation({
+    onSuccess: () => {
+      setAddOpen(false);
+      setForm({
+        name: "",
+        email: "",
+        department: "Engineering",
+        position: "",
+        status: "Active",
+        employmentType: "Full Time",
+        joinedDate: "",
+        compensation: "",
+      });
+      setPage(1);
+      setError(null);
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+
+  const removeMutation = trpc.employee.remove.useMutation({
+    onSuccess: () => {
+      setError(null);
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+
+  const updateMutation = trpc.employee.update.useMutation({
+    onSuccess: () => {
+      setIsEditing(false);
+      setViewEmployee(null);
+      setError(null);
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (error) => {
+      if (error.data?.code === "FORBIDDEN")
+        setError("You do not have permission.");
+      else setError(error.message);
+    },
+  });
+
+  const isPending =
+    createMutation.isPending ||
+    removeMutation.isPending ||
+    updateMutation.isPending;
 
   const filtered = useMemo(
     () =>
@@ -325,138 +385,61 @@ export function EmployeesClient({
     URL.revokeObjectURL(url);
   }
 
-  async function handleAdd(e: React.FormEvent) {
+  function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim()) return;
     setError(null);
-    setSubmitting(true);
-    try {
-      const nameTrimmed = form.name.trim();
-      const parts = nameTrimmed.split(/\s+/);
-      const firstName = parts[0] ?? nameTrimmed;
-      const lastName = parts.slice(1).join(" ").trim() || "-";
-      const compensation = Math.round(Number(form.compensation || "0") * 100);
-      const hireDate = form.joinedDate || new Date().toISOString().slice(0, 10);
-      const statusValue = form.status === "Active" ? "active" : "on_leave";
-      const res = await fetch("/api/trpc/employee.create", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email: form.email.trim(),
-          ssn: "000-00-0000",
-          bank: "00000000",
-          compensation,
-          hireDate,
-          status: statusValue,
-          department: form.department,
-          position: form.position.trim() || "Employee",
-          employmentType: form.employmentType,
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          setError("You do not have permission.");
-        } else {
-          setError(text || "Failed to create employee.");
-        }
-        return;
-      }
-      setAddOpen(false);
-      setForm({
-        name: "",
-        email: "",
-        department: "Engineering",
-        position: "",
-        status: "Active",
-        employmentType: "Full Time",
-        joinedDate: "",
-        compensation: "",
-      });
-      setPage(1);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error.");
-    } finally {
-      setSubmitting(false);
-    }
+    const nameTrimmed = form.name.trim();
+    const parts = nameTrimmed.split(/\s+/);
+    const firstName = parts[0] ?? nameTrimmed;
+    const lastName = parts.slice(1).join(" ").trim() || "-";
+    const compensation = Math.round(Number(form.compensation || "0") * 100);
+    const hireDate = form.joinedDate || new Date().toISOString().slice(0, 10);
+    const statusValue = form.status === "Active" ? "active" : "on_leave";
+    createMutation.mutate({
+      firstName,
+      lastName,
+      email: form.email.trim(),
+      ssn: "000-00-0000",
+      bank: "00000000",
+      compensation,
+      hireDate,
+      status: statusValue,
+      department: form.department,
+      position: form.position.trim() || "Employee",
+      employmentType: form.employmentType,
+    });
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     setError(null);
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/employee.remove", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          setError("You do not have permission.");
-        } else {
-          setError(text || "Failed to delete employee.");
-        }
-        return;
-      }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error.");
-    } finally {
-      setSubmitting(false);
-    }
+    removeMutation.mutate({ id });
   }
 
-  async function handleUpdate() {
+  function handleUpdate() {
     if (!viewEmployee) return;
-    setError(null);
-    setSubmitting(true);
-    try {
-      const patch: Record<string, unknown> = {};
-      if (editForm.department !== viewEmployee.department) {
-        patch.department = editForm.department;
-      }
-      if (editForm.position !== viewEmployee.position) {
-        patch.position = editForm.position;
-      }
-      const mappedStatus = editForm.status === "Active" ? "active" : "on_leave";
-      const currentMapped =
-        viewEmployee.status === "Active" ? "active" : "on_leave";
-      if (mappedStatus !== currentMapped) {
-        patch.status = mappedStatus;
-      }
-      if (editForm.employmentType !== viewEmployee.employmentType) {
-        patch.employmentType = editForm.employmentType;
-      }
-      if (Object.keys(patch).length === 0) {
-        setIsEditing(false);
-        return;
-      }
-      const res = await fetch("/api/trpc/employee.update", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: viewEmployee.id, patch }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          setError("You do not have permission.");
-        } else {
-          setError(text || "Failed to update employee.");
-        }
-        return;
-      }
-      setIsEditing(false);
-      setViewEmployee(null);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error.");
-    } finally {
-      setSubmitting(false);
+    const patch: Record<string, unknown> = {};
+    if (editForm.department !== viewEmployee.department) {
+      patch.department = editForm.department;
     }
+    if (editForm.position !== viewEmployee.position) {
+      patch.position = editForm.position;
+    }
+    const mappedStatus = editForm.status === "Active" ? "active" : "on_leave";
+    const currentMapped =
+      viewEmployee.status === "Active" ? "active" : "on_leave";
+    if (mappedStatus !== currentMapped) {
+      patch.status = mappedStatus;
+    }
+    if (editForm.employmentType !== viewEmployee.employmentType) {
+      patch.employmentType = editForm.employmentType;
+    }
+    if (Object.keys(patch).length === 0) {
+      setIsEditing(false);
+      return;
+    }
+    setError(null);
+    updateMutation.mutate({ id: viewEmployee.id, patch });
   }
 
   function openView(emp: EmployeeDisplay) {
@@ -634,7 +617,7 @@ export function EmployeesClient({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {submitting ? (
+              {isPending ? (
                 <TableRow>
                   <TableCell colSpan={8}>
                     <div className="animate-pulse h-4 bg-muted rounded" />
@@ -955,9 +938,9 @@ export function EmployeesClient({
               <Button
                 type="submit"
                 className="bg-[#2563eb] hover:bg-[#1d4ed8]"
-                disabled={submitting}
+                disabled={isPending}
               >
-                {submitting ? "Adding..." : "Add Employee"}
+                {createMutation.isPending ? "Adding..." : "Add Employee"}
               </Button>
             </DialogFooter>
           </form>
@@ -1125,16 +1108,16 @@ export function EmployeesClient({
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(false)}
-                  disabled={submitting}
+                  disabled={isPending}
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleUpdate}
                   className="bg-[#2563eb] hover:bg-[#1d4ed8]"
-                  disabled={submitting}
+                  disabled={isPending}
                 >
-                  {submitting ? "Saving..." : "Save"}
+                  {updateMutation.isPending ? "Saving..." : "Save"}
                 </Button>
               </>
             ) : (
@@ -1142,7 +1125,7 @@ export function EmployeesClient({
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(true)}
-                  disabled={submitting}
+                  disabled={isPending}
                 >
                   Edit
                 </Button>

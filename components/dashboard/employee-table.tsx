@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -39,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type Cents, cents, moneyToMajor } from "@/lib/money";
+import { trpc } from "@/lib/trpc/client";
 import type { EmployeeStatus } from "@/lib/types";
 
 export type EmployeeTableRow = {
@@ -89,6 +91,7 @@ export function EmployeeTable({
   employees: EmployeeTableRow[];
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
@@ -103,8 +106,29 @@ export function EmployeeTable({
     hireDate: "",
     status: "active" as EmployeeStatus,
   });
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const createMutation = trpc.employee.create.useMutation({
+    onSuccess: () => {
+      setAddOpen(false);
+      setForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        compensation: "",
+        hireDate: "",
+        status: "active",
+      });
+      router.refresh();
+      queryClient.invalidateQueries();
+    },
+    onError: (e) =>
+      setError(
+        e.data?.code === "FORBIDDEN"
+          ? "You do not have permission to add employees."
+          : e.message,
+      ),
+  });
+  const isPending = createMutation.isPending;
 
   const filtered = useMemo(
     () => employees.filter((r) => matches(r, q, status)),
@@ -119,7 +143,7 @@ export function EmployeeTable({
   const start = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const end = Math.min(currentPage * pageSize, filtered.length);
 
-  async function handleCreate(e: React.FormEvent) {
+  function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const fn = form.firstName.trim();
@@ -141,46 +165,16 @@ export function EmployeeTable({
       setError("Compensation must be valid cents.");
       return;
     }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/trpc/employee.create", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          firstName: fn,
-          lastName: ln,
-          email: em,
-          ssn: "000-00-0000",
-          bank: "00000000",
-          compensation: compCents,
-          hireDate: form.hireDate || new Date().toISOString().slice(0, 10),
-          status: form.status,
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 403 || text.includes("FORBIDDEN")) {
-          setError("You do not have permission to add employees.");
-        } else {
-          setError(text || "Failed to create employee.");
-        }
-        return;
-      }
-      setAddOpen(false);
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        compensation: "",
-        hireDate: "",
-        status: "active",
-      });
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error.");
-    } finally {
-      setSubmitting(false);
-    }
+    createMutation.mutate({
+      firstName: fn,
+      lastName: ln,
+      email: em,
+      ssn: "000-00-0000",
+      bank: "00000000",
+      compensation: compCents,
+      hireDate: form.hireDate || new Date().toISOString().slice(0, 10),
+      status: form.status,
+    });
   }
 
   return (
@@ -300,16 +294,16 @@ export function EmployeeTable({
                     type="button"
                     variant="outline"
                     onClick={() => setAddOpen(false)}
-                    disabled={submitting}
+                    disabled={isPending}
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    disabled={submitting}
+                    disabled={isPending}
                     className="bg-[#2b2b46] text-white hover:bg-[#2b2b46]/90"
                   >
-                    {submitting ? "Creating…" : "Create"}
+                    {isPending ? "Creating…" : "Create"}
                   </Button>
                 </div>
               </form>
