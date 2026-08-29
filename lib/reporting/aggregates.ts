@@ -162,7 +162,7 @@ export function attendance(rows: TimeEntryRow[]): AttendanceSummary {
     approved,
     pending,
     rejected,
-    approvedHours: Math.round(approvedHours * 100) / 100,
+    approvedHours: Math.round(approvedHours),
   };
 }
 
