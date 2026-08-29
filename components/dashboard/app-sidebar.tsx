@@ -79,7 +79,7 @@ const NAV_GROUPS = [
         href: "/dashboard/payroll",
         badge: "3",
       },
-      { label: "Payslips", icon: ScrollText, href: "/dashboard#payslips" },
+      { label: "Payslips", icon: ScrollText, href: "/dashboard/payslips" },
     ],
   },
   {
