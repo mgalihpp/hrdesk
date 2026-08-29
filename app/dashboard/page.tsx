@@ -94,7 +94,7 @@ export default async function DashboardPage({
   const eRepo = employeeRepo(prisma, tenantId);
   const payRepo = payRunRepo(prisma, tenantId);
   const aRepo = auditRepo(prisma, tenantId);
-  const [overview, series, attendance, payRuns, employeesRaw, pipeline, auditPage] =
+  const [overview, series, attendance, payRuns, employeesRaw, pipeline, auditPage, nextPayroll] =
     await Promise.all([
       repo.overview(range),
       repo.getPayrollSeries(range),
@@ -103,6 +103,7 @@ export default async function DashboardPage({
       eRepo.list(),
       repo.getPipeline(),
       aRepo.list({ limit: 4 }),
+      payRepo.getNextPayroll(),
     ]);
   const employees: EmployeeTableRow[] = employeesRaw.map((e) => ({
     id: e.id as string,
@@ -148,7 +149,7 @@ export default async function DashboardPage({
         <EmployeeTable employees={employees} />
         <div className="space-y-6">
           <QuickActions />
-          <NextPayroll />
+          <NextPayroll data={nextPayroll} />
         </div>
       </div>
 

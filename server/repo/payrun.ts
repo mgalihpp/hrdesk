@@ -4,6 +4,15 @@ import { cents } from "@/lib/money";
 import type { PayRunStatus, PayrollResult } from "@/lib/payroll/types";
 import type { PayRunId, TenantId } from "@/lib/types";
 
+export type NextPayrollData = {
+  periodStart: string;
+  periodEnd: string;
+  periodLabel: string;
+  daysUntil: number;
+  estimatedGross: Cents;
+  employeeCount: number;
+};
+
 export type PayRunWithTotals = {
   id: string;
   tenantId: string;
@@ -166,6 +175,44 @@ export function payRunRepo(prisma: Prisma, tenantId: TenantId) {
       return prisma.payslip.findMany({
         where: { payRunId: payRunId as string, tenantId },
       });
+    },
+
+    async getNextPayroll(now?: Date): Promise<NextPayrollData | null> {
+      const run = await prisma.payRun.findFirst({
+        where: { tenantId },
+        orderBy: { periodEnd: "desc" },
+      });
+      if (!run) return null;
+      const employees = await prisma.employee.findMany({
+        where: { tenantId, status: "active" },
+      });
+      const employeeCount = employees.length;
+      const total = employees.reduce(
+        (sum: number, e: { compensation: number }) => sum + e.compensation,
+        0,
+      );
+      const estimatedGross = cents(total);
+      const periodLabel = new Date(
+        `${run.periodStart}T00:00:00Z`,
+      ).toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+      const periodStartDate = new Date(`${run.periodStart}T00:00:00Z`);
+      const base = now ?? new Date();
+      const daysUntil = Math.max(
+        0,
+        Math.ceil((periodStartDate.getTime() - base.getTime()) / 86400000),
+      );
+      return {
+        periodStart: run.periodStart,
+        periodEnd: run.periodEnd,
+        periodLabel,
+        daysUntil,
+        estimatedGross,
+        employeeCount,
+      };
     },
   };
 }
