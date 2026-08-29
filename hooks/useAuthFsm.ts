@@ -115,7 +115,7 @@ export function useAuthFsm(_mode: AuthMode) {
         dispatch({ type: "CREATING_ORG" });
 
         const slug = deriveOrgSlug({ name, email });
-        const orgRes = await authClient.organization.create({
+        let orgRes = await authClient.organization.create({
           name:
             slug
               .replace(/-[a-z0-9]{4}$/, "")
@@ -126,15 +126,20 @@ export function useAuthFsm(_mode: AuthMode) {
 
         if (orgRes.error) {
           const code = (orgRes.error as { code?: string }).code ?? "";
-          if (
+          const msg = String(
+            (orgRes.error as { message?: string }).message ?? "",
+          ).toLowerCase();
+          const isSlugError =
             String(code).toLowerCase().includes("slug") ||
-            String(code).toLowerCase().includes("already")
-          ) {
+            String(code).toLowerCase().includes("already") ||
+            msg.includes("slug") ||
+            msg.includes("already");
+          if (isSlugError) {
             const retrySlug = deriveOrgSlug({
               name: `${name} ${Date.now() % 1000}`,
               email,
             });
-            await authClient.organization.create({
+            const retryRes = await authClient.organization.create({
               name:
                 retrySlug
                   .replace(/-[a-z0-9]{4}$/, "")
@@ -142,6 +147,8 @@ export function useAuthFsm(_mode: AuthMode) {
                   .replace(/\b\w/g, (c) => c.toUpperCase()) || name,
               slug: retrySlug,
             });
+            if (retryRes.error) throw retryRes.error;
+            orgRes = retryRes;
           } else {
             throw orgRes.error;
           }
@@ -151,6 +158,21 @@ export function useAuthFsm(_mode: AuthMode) {
         if (orgId) {
           try {
             await authClient.organization.setActive({ organizationId: orgId });
+          } catch {}
+        } else {
+          // organization.create auto-sets activeOrganizationId via adapter,
+          // so absence of orgId mainly means fallback slug succeeded internally.
+          // Ensure session reflects the new org by re-fetching.
+          try {
+            const list = await authClient.organization.list();
+            const first = (
+              list.data as unknown as { id: string }[] | null
+            )?.[0];
+            if (first?.id) {
+              await authClient.organization.setActive({
+                organizationId: first.id,
+              });
+            }
           } catch {}
         }
 

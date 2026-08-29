@@ -85,8 +85,8 @@ const NAV_GROUPS = [
   {
     label: "HIRING",
     items: [
-      { label: "Candidates", icon: UserCheck, href: "/dashboard#candidates" },
-      { label: "Interviews", icon: Briefcase, href: "/dashboard#interviews" },
+      { label: "Candidates", icon: UserCheck, href: "/dashboard/candidates" },
+      { label: "Interviews", icon: Briefcase, href: "/dashboard/interviews" },
     ],
   },
   {
