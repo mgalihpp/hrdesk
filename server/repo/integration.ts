@@ -276,7 +276,6 @@ export function integrationRepo(prisma: PrismaClient, tenantId: TenantId) {
       payload?: Record<string, unknown>;
       idempotencyKey?: string | null;
     }): Promise<IntegrationSyncView> {
-      // guard: connection exists and belongs to tenant
       const connection = await db.integrationConnection.findFirst({
         where: { id: input.connectionId, tenantId },
       });
@@ -356,7 +355,6 @@ export function integrationRepo(prisma: PrismaClient, tenantId: TenantId) {
         where: { tenantId, provider: input.provider },
       });
       if (!connection) {
-        // create pending connection for inbound webhook when none exists
         connection = await db.integrationConnection.create({
           data: {
             tenantId,

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("PayrunTable", () => {
@@ -19,9 +19,7 @@ describe("PayrunTable", () => {
     expect(src).toContain("moneyToMajor");
   });
 
-  it("lib/dashboard-data no longer exports PAY_RUNS", () => {
-    const src = readFileSync("lib/dashboard-data.ts", "utf8");
-    expect(src).not.toContain("PAY_RUNS");
-    expect(src).not.toContain("export type PayRun");
+  it("lib/dashboard-data is removed after epic migration", () => {
+    expect(existsSync("lib/dashboard-data.ts")).toBe(false);
   });
 });
